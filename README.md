@@ -1,4 +1,4 @@
 # todolist
-Simple REST API for a To-do List 
+Simple REST API for a Todo list.
 
-This service uses gorilla/mux and an in-mem datastore.
+Uses gorilla/mux and an in-mem datastore.
