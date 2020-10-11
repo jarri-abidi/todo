@@ -20,7 +20,7 @@ func main() {
 	router.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
 	router.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
 
-      log.Print(`
+        log.Print(`
  _____          _           __ _     _   
 /__   \___   __| | ___     / /(_)___| |_ 
   / /\/ _ \ / _` |/ _ \   / / | / __| __|
@@ -28,7 +28,7 @@ func main() {
  \/   \___/ \__,_|\___/  \____/_|___/\__|
                                          
 Starting HTTP server on port 8085.
-      `)
+        `)
 	log.Fatal(http.ListenAndServe(":8085", router))
 }
 
