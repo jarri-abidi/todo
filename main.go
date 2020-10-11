@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -20,15 +21,14 @@ func main() {
 	router.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
 	router.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
 
-        log.Print(`
- _____          _           __ _     _   
-/__   \___   __| | ___     / /(_)___| |_ 
-  / /\/ _ \ / _` |/ _ \   / / | / __| __|
- / / | (_) | (_| | (_) | / /__| \__ \ |_ 
- \/   \___/ \__,_|\___/  \____/_|___/\__|
-                                         
-Starting HTTP server on port 8085.
-        `)
+	fmt.Println(`
+	 _____          _           __ _     _   
+	/__   \___   __| | ___     / /(_)___| |_ 
+	  / /\/ _ \ / _  |/ _ \   / / | / __| __|
+	 / / | (_) | (_| | (_) | / /__| \__ \ |_ 
+	 \/   \___/ \__,_|\___/  \____/_|___/\__|
+	`)
+	log.Print("Started HTTP server on port 8085")
 	log.Fatal(http.ListenAndServe(":8085", router))
 }
 
