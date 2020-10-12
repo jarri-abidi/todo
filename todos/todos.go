@@ -1,6 +1,7 @@
 package todos
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -32,15 +33,17 @@ type todoService struct {
 	store Store
 }
 
+var ErrTodoNotFound = errors.New("todo not found")
+
 func NewService(store Store) Service {
 	return &todoService{store: store}
 }
 
 func (s *todoService) Save(t *Todo) error {
-	err := s.store.Insert(t)
-	if err != nil {
+	if err := s.store.Insert(t); err != nil {
 		return fmt.Errorf("could not save todo: %v", err)
 	}
+
 	return nil
 }
 
@@ -49,11 +52,15 @@ func (s *todoService) List() ([]Todo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not list todos: %v", err)
 	}
+
 	return todos, nil
 }
 
 func (s *todoService) ToggleDone(id int64) error {
 	todo, err := s.store.FindByID(id)
+	if err == ErrTodoNotFound {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("could not find todo: %v", err)
 	}
@@ -70,8 +77,12 @@ func (s *todoService) ToggleDone(id int64) error {
 
 func (s *todoService) Remove(id int64) error {
 	err := s.store.DeleteByID(id)
+	if err == ErrTodoNotFound {
+		return err
+	}
 	if err != nil {
 		return fmt.Errorf("could not delete todo: %v", err)
 	}
+
 	return nil
 }

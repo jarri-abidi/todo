@@ -21,7 +21,12 @@ func (h *Handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.ToggleDone(id); err != nil {
+	err = h.Service.ToggleDone(id)
+	if err == todos.ErrTodoNotFound {
+		respondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -54,7 +59,12 @@ func (h *Handler) RemoveTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.Remove(id); err != nil {
+	err = h.Service.Remove(id)
+	if err == todos.ErrTodoNotFound {
+		respondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
