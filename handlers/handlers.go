@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -87,7 +88,15 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
 	w.WriteHeader(code)
-	w.Write(response)
+
+	response, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("could not encode http response: %v", err)
+		return
+	}
+
+	if _, err := w.Write(response); err != nil {
+		log.Printf("could not write http response: %v", err)
+	}
 }
