@@ -20,6 +20,7 @@ func main() {
 	router.HandleFunc("/todos", h.SaveTodo).Methods("POST")
 	router.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
 	router.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
+	router.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
 
 	fmt.Println(`
 	 _____          _           __ _     _   

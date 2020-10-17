@@ -82,6 +82,8 @@ func (h *Handler) ListTodos(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, todolist)
 }
 
+func (h *Handler) ReplaceTodo(w http.ResponseWriter, r *http.Request) {}
+
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, map[string]string{"error": message})
 }

@@ -136,3 +136,86 @@ func TestListTodos(t *testing.T) {
 	}
 }
 
+func TestReplaceTodo(t *testing.T) {
+	tt := []struct {
+		Name            string
+		ReqBody         string
+		TodoID          string
+		ExpectedName    string
+		ExpectedDone    bool
+		ExpectedCode    int
+		ExpectedRspBody string
+	}{
+		{
+			"Returns 200 and updates todo for valid request",
+			`{"name": "Pawdo ko paani daal do", "done": true}`,
+			"1", "Pawdo ko paani daal do", true, http.StatusOK,
+			`{"id": 1, "name": "Pawdo ko paani daal do", "done": true}`,
+		},
+		{
+			"Returns 201 and creates todo for valid request if it doesn't exist",
+			`{"name": "Pawdo ko paani daal do", "done": true}`,
+			"1337", "Pawdo ko paani daal do", false, http.StatusCreated,
+			`{"id": 1337, "name": "Pawdo ko paani daal do", "done": true}`,
+		},
+		{
+			"Returns 400 and error msg for non-numeric id",
+			`{"name": "Pawdo ko paani daal do", "done": true}`,
+			"meow", "Gaari ki service karwalo", false, http.StatusBadRequest,
+			`{"error": "Invalid todo ID"}`,
+		},
+		{
+			"Returns 400 and error msg for invalid json",
+			`>?!{"name": "ye kya horaha hai}`,
+			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
+			`{"error": "Invalid request body"}`,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.Name, func(t *testing.T) {
+			s := todos.NewService(inmem.NewTodoStore())
+			h := handlers.Handler{Service: s}
+
+			todo := todos.Todo{Name: "Gaari ki service karwalo"}
+			if err := s.Save(&todo); err != nil {
+				t.Fatalf("could not save todo: %v", err)
+			}
+
+			rec := httptest.NewRecorder()
+			req, err := http.NewRequest("PUT", "/todo/:id", strings.NewReader(tc.ReqBody))
+			if err != nil {
+				t.Fatalf("could not create http request: %v", err)
+			}
+			req = mux.SetURLVars(req, map[string]string{"id": tc.TodoID})
+
+			h.ReplaceTodo(rec, req)
+
+			if rec.Result().StatusCode != tc.ExpectedCode {
+				t.Fatalf("expected code %d, got: %d", tc.ExpectedCode, rec.Result().StatusCode)
+			}
+
+			if rec.Body.String() != tc.ExpectedRspBody {
+				t.Fatalf("expected response %s, got: %s", tc.ExpectedRspBody, rec.Body.String())
+			}
+
+			todolist, err := s.List()
+			if err != nil {
+				t.Fatalf("could not list todos: %v", err)
+			}
+
+			for _, todo := range todolist {
+				if strconv.FormatInt(todo.ID, 10) == tc.TodoID {
+					if todo.Name != tc.ExpectedName {
+						t.Fatalf("expected todo name %s, got: %s", tc.ExpectedName, todo.Name)
+					}
+					if todo.Done != tc.ExpectedDone {
+						t.Fatalf("expected todo done %t, got: %t", tc.ExpectedDone, todo.Done)
+					}
+					return
+				}
+			}
+			t.Fatalf("could not find todo after calling handler")
+		})
+	}
+}
