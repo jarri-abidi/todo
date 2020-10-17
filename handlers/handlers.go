@@ -37,8 +37,7 @@ func (h *Handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) SaveTodo(w http.ResponseWriter, r *http.Request) {
 	var t todos.Todo
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&t); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
