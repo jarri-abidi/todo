@@ -14,18 +14,19 @@ type Todo struct {
 
 // Service is the interface to interact with Todo(s).
 type Service interface {
-	Save(t *Todo) error
+	Save(todo *Todo) error
 	List() ([]Todo, error)
 	ToggleDone(id int64) error
 	Remove(id int64) error
+	Update(todo *Todo) error
 }
 
 // Store is the interface used to persist the Todo(s).
 type Store interface {
-	Insert(t *Todo) error
+	Insert(todo *Todo) error
 	FindAll() ([]Todo, error)
 	FindByID(id int64) (*Todo, error)
-	Update(t *Todo) error
+	Update(todo *Todo) error
 	DeleteByID(id int64) error
 }
 
@@ -33,14 +34,17 @@ type todoService struct {
 	store Store
 }
 
-var ErrTodoNotFound = errors.New("todo not found")
+var (
+	ErrTodoNotFound      = errors.New("todo not found")
+	ErrTodoAlreadyExists = errors.New("todo already exists")
+)
 
 func NewService(store Store) Service {
 	return &todoService{store: store}
 }
 
-func (s *todoService) Save(t *Todo) error {
-	if err := s.store.Insert(t); err != nil {
+func (s *todoService) Save(todo *Todo) error {
+	if err := s.store.Insert(todo); err != nil {
 		return fmt.Errorf("could not save todo: %v", err)
 	}
 
@@ -84,5 +88,9 @@ func (s *todoService) Remove(id int64) error {
 		return fmt.Errorf("could not delete todo: %v", err)
 	}
 
+	return nil
+}
+
+func (s *todoService) Update(todo *Todo) error {
 	return nil
 }
