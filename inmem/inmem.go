@@ -9,21 +9,35 @@ import (
 type todoStore struct {
 	sync.RWMutex
 	todolist []todos.Todo
+	used     map[int64]bool
 	counter  int64
 }
 
 func NewTodoStore() todos.Store {
-	return &todoStore{todolist: []todos.Todo{}}
+	return &todoStore{todolist: []todos.Todo{}, used: make(map[int64]bool)}
 }
 
-func (ts *todoStore) Insert(t *todos.Todo) error {
+func (ts *todoStore) Insert(todo *todos.Todo) error {
 	ts.Lock()
 	defer ts.Unlock()
 
-	ts.counter++
-	t.ID = ts.counter
+	if todo.ID != 0 {
+		if ts.used[todo.ID] {
+			return todos.ErrTodoAlreadyExists
+		}
 
-	ts.todolist = append(ts.todolist, *t)
+		ts.used[todo.ID] = true
+	} else {
+		ts.counter++
+		for ts.used[ts.counter] {
+			ts.counter++
+		}
+
+		ts.used[todo.ID] = true
+		todo.ID = ts.counter
+	}
+
+	ts.todolist = append(ts.todolist, *todo)
 
 	return nil
 }
@@ -47,13 +61,13 @@ func (ts *todoStore) FindByID(id int64) (*todos.Todo, error) {
 	return nil, todos.ErrTodoNotFound
 }
 
-func (ts *todoStore) Update(t *todos.Todo) error {
+func (ts *todoStore) Update(todo *todos.Todo) error {
 	ts.Lock()
 	defer ts.Unlock()
 
-	for i, todo := range ts.todolist {
-		if todo.ID == t.ID {
-			ts.todolist[i] = *t
+	for i, t := range ts.todolist {
+		if t.ID == todo.ID {
+			ts.todolist[i] = *todo
 			return nil
 		}
 	}
