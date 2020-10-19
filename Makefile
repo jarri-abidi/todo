@@ -10,4 +10,3 @@ test:
 
 run: build
 	./todolist
-	
