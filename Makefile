@@ -6,7 +6,7 @@ build:
 	go build -o todolist
 
 test:
-	go test -cover .\...
+	go test -cover ./...
 
 run: build
 	./todolist
