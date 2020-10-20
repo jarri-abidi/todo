@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/matryer/is"
+
 	"github.com/jarri-abidi/todolist/handlers"
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
@@ -36,41 +38,31 @@ func TestToggleTodo(t *testing.T) {
 		},
 	}
 
+	is := is.New(t)
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			s := todos.NewService(inmem.NewTodoStore())
-			h := handlers.Handler{Service: s}
+			var (
+				is = is.New(t)
+				s  = todos.NewService(inmem.NewTodoStore())
+				h  = handlers.Handler{Service: s}
+			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
-			if err := s.Save(&todo); err != nil {
-				t.Fatalf("could not save todo: %v", err)
-			}
+			is.NoErr(s.Save(&todo)) // could not save todo
 
 			rec := httptest.NewRecorder()
 			req, err := http.NewRequest("PATCH", "/todo/:id", nil)
-			if err != nil {
-				t.Fatalf("could not create http request: %v", err)
-			}
+			is.NoErr(err) // could not create http request
 			req = mux.SetURLVars(req, map[string]string{"id": tc.TodoID})
 
 			h.ToggleTodo(rec, req)
 
-			if rec.Result().StatusCode != tc.ExpectedCode {
-				t.Fatalf("expected code %d, got: %d", tc.ExpectedCode, rec.Result().StatusCode)
-			}
-
-			if rec.Body.String() != tc.ExpectedRspBody {
-				t.Fatalf("expected response %s, got: %s", tc.ExpectedRspBody, rec.Body.String())
-			}
+			is.Equal(rec.Result().StatusCode, tc.ExpectedCode)
+			is.Equal(rec.Body.String(), tc.ExpectedRspBody)
 
 			todolist, err := s.List()
-			if err != nil {
-				t.Fatalf("could not list todos: %v", err)
-			}
-
-			if todolist[0].Done != tc.ExpectedDone {
-				t.Fatalf("expected todo done %t, got: %t", tc.ExpectedDone, todolist[0].Done)
-			}
+			is.NoErr(err)                               // could not list todos
+			is.Equal(todolist[0].Done, tc.ExpectedDone) // todo should be toggled
 		})
 	}
 }
@@ -100,38 +92,31 @@ func TestListTodos(t *testing.T) {
 		},
 	}
 
+	is := is.New(t)
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			s := todos.NewService(inmem.NewTodoStore())
-			h := handlers.Handler{Service: s}
+			var (
+				is = is.New(t)
+				s  = todos.NewService(inmem.NewTodoStore())
+				h  = handlers.Handler{Service: s}
+			)
 
-			for _, todo := range tc.TodosInStore {
-				if err := s.Save(&todo); err != nil {
-					t.Fatalf("could not save todo: %v", err)
-				}
+			for i := range tc.TodosInStore {
+				is.NoErr(s.Save(&tc.TodosInStore[i])) // could not save todo
 			}
 
 			rec := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "/todos", nil)
-			if err != nil {
-				t.Fatalf("could not create http request: %v", err)
-			}
+			is.NoErr(err) // could not create http request
 
 			h.ListTodos(rec, req)
 
-			if rec.Result().StatusCode != http.StatusOK {
-				t.Fatalf("expected code %d, got: %d", http.StatusOK, rec.Result().StatusCode)
-			}
+			is.Equal(rec.Result().StatusCode, http.StatusOK)
 
 			byt, err := json.Marshal(tc.TodosInStore)
-			if err != nil {
-				t.Fatalf("invalid test data")
-			}
-
+			is.NoErr(err) // invalid test data
 			expectedRspBody := string(byt)
-			if rec.Body.String() != expectedRspBody {
-				t.Fatalf("expected response %s, got: %s", expectedRspBody, rec.Body.String())
-			}
+			is.Equal(rec.Body.String(), expectedRspBody)
 		})
 	}
 }
@@ -172,50 +157,39 @@ func TestReplaceTodo(t *testing.T) {
 		},
 	}
 
+	is := is.New(t)
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			s := todos.NewService(inmem.NewTodoStore())
-			h := handlers.Handler{Service: s}
+			var (
+				is = is.New(t)
+				s  = todos.NewService(inmem.NewTodoStore())
+				h  = handlers.Handler{Service: s}
+			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
-			if err := s.Save(&todo); err != nil {
-				t.Fatalf("could not save todo: %v", err)
-			}
+			is.NoErr(s.Save(&todo)) // could not save todo
 
 			rec := httptest.NewRecorder()
 			req, err := http.NewRequest("PUT", "/todo/:id", strings.NewReader(tc.ReqBody))
-			if err != nil {
-				t.Fatalf("could not create http request: %v", err)
-			}
+			is.NoErr(err) // could not create http request
 			req = mux.SetURLVars(req, map[string]string{"id": tc.TodoID})
 
 			h.ReplaceTodo(rec, req)
 
-			if rec.Result().StatusCode != tc.ExpectedCode {
-				t.Fatalf("expected code %d, got: %d", tc.ExpectedCode, rec.Result().StatusCode)
-			}
-
-			if rec.Body.String() != tc.ExpectedRspBody {
-				t.Fatalf("expected response %s, got: %s", tc.ExpectedRspBody, rec.Body.String())
-			}
+			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected HTTP status code
+			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected HTTP response body
 
 			todolist, err := s.List()
-			if err != nil {
-				t.Fatalf("could not list todos: %v", err)
-			}
+			is.NoErr(err) // could not list todos
 
 			for _, todo := range todolist {
 				if strconv.FormatInt(todo.ID, 10) == tc.TodoID {
-					if todo.Name != tc.ExpectedName {
-						t.Fatalf("expected todo name %s, got: %s", tc.ExpectedName, todo.Name)
-					}
-					if todo.Done != tc.ExpectedDone {
-						t.Fatalf("expected todo done %t, got: %t", tc.ExpectedDone, todo.Done)
-					}
+					is.Equal(todo.Name, tc.ExpectedName)
+					is.Equal(todo.Done, tc.ExpectedDone)
 					return
 				}
 			}
-			t.Fatalf("could not find todo after calling handler")
+			is.Fail() // could not find todo after calling handler
 		})
 	}
 }

@@ -3,155 +3,98 @@ package todos_test
 import (
 	"testing"
 
+	"github.com/matryer/is"
+
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
 )
 
 func TestSave(t *testing.T) {
-	svc := todos.NewService(inmem.NewTodoStore())
+	var (
+		is  = is.New(t)
+		svc = todos.NewService(inmem.NewTodoStore())
+	)
 
-	todo := todos.Todo{
-		Name: "Kachra phenk k ao",
-		Done: false,
-	}
+	todo := todos.Todo{Name: "Kachra phenk k ao", Done: false}
 
-	err := svc.Save(&todo)
-	if err != nil {
-		t.Fatalf("could not save todo: %v", err)
-	}
+	is.NoErr(svc.Save(&todo)) // could not save todo
 }
 
 func TestList(t *testing.T) {
-	svc := todos.NewService(inmem.NewTodoStore())
+	var (
+		is  = is.New(t)
+		svc = todos.NewService(inmem.NewTodoStore())
+	)
 
 	expected := []todos.Todo{
-		{
-			Name: "Kachra phenk k ao",
-			Done: false,
-		},
-		{
-			Name: "Roti le kar ao",
-			Done: false,
-		},
-		{
-			Name: "Geezer chala do",
-			Done: false,
-		},
+		{Name: "Kachra phenk k ao", Done: false},
+		{Name: "Roti le kar ao", Done: false},
+		{Name: "Geezer chala do", Done: false},
 	}
 
 	for i := range expected {
-		err := svc.Save(&expected[i])
-		if err != nil {
-			t.Fatalf("could not save todo: %v", err)
-		}
+		is.NoErr(svc.Save(&expected[i])) // could not save todo
 	}
 
 	todolist, err := svc.List()
-	if err != nil {
-		t.Fatalf("could not list todos: %v", err)
-	}
+	is.NoErr(err) // could not list todos
 
 	for i := range todolist {
-		if todolist[i].ID != expected[i].ID {
-			t.Fatalf("ID does not match for todo at index %d", i)
-		}
-		if todolist[i].Name != expected[i].Name {
-			t.Fatalf("Name does not match for todo at index %d", i)
-		}
-		if todolist[i].Done != expected[i].Done {
-			t.Fatalf("Done does not match for todo at index %d", i)
-		}
+		is.Equal(todolist[i].ID, expected[i].ID)     // IDs need to match
+		is.Equal(todolist[i].Name, expected[i].Name) // Names need to match
+		is.Equal(todolist[i].Done, expected[i].Done) // Done needs to match
 	}
 }
 
 func TestToggleDone(t *testing.T) {
-	svc := todos.NewService(inmem.NewTodoStore())
+	var (
+		is  = is.New(t)
+		svc = todos.NewService(inmem.NewTodoStore())
+	)
 
-	todo := todos.Todo{
-		Name: "Kachra phenk k ao",
-		Done: false,
-	}
+	todo := todos.Todo{Name: "Kachra phenk k ao", Done: false}
+	is.NoErr(svc.Save(&todo)) // could not save todo
 
-	err := svc.Save(&todo)
-	if err != nil {
-		t.Fatalf("could not save todo: %v", err)
-	}
-
-	err = svc.ToggleDone(todo.ID)
-	if err != nil {
-		t.Fatalf("could not toggle todo: %v", err)
-	}
+	is.NoErr(svc.ToggleDone(todo.ID)) // could not toggle todo
 
 	todolist, err := svc.List()
-	if err != nil {
-		t.Fatalf("could not list todos: %v", err)
-	}
-
-	if todolist[0].Done != true {
-		t.Fatal("expected true, got false")
-	}
+	is.NoErr(err)             // could not list todos
+	is.True(todolist[0].Done) // expected todo to be done
 }
 
 func TestRemove(t *testing.T) {
-	svc := todos.NewService(inmem.NewTodoStore())
+	var (
+		is  = is.New(t)
+		svc = todos.NewService(inmem.NewTodoStore())
+	)
 
-	todo := todos.Todo{
-		Name: "Kachra phenk k ao",
-		Done: true,
-	}
+	todo := todos.Todo{Name: "Kachra phenk k ao", Done: true}
+	is.NoErr(svc.Save(&todo)) // could not save todo
 
-	err := svc.Save(&todo)
-	if err != nil {
-		t.Fatalf("could not save todo: %v", err)
-	}
-
-	err = svc.Remove(todo.ID)
-	if err != nil {
-		t.Fatalf("could not remove todo: %v", err)
-	}
+	is.NoErr(svc.Remove(todo.ID)) // could not remove todo
 
 	todolist, err := svc.List()
-	if err != nil {
-		t.Fatalf("could not list todos: %v", err)
-	}
-
-	if len(todolist) > 0 {
-		t.Fatal("expected list to be empty after removing todo")
-	}
+	is.NoErr(err)              // could not list todos
+	is.Equal(len(todolist), 0) // expected list to be empty after removing todo
 }
 
 func TestUpdate(t *testing.T) {
-	svc := todos.NewService(inmem.NewTodoStore())
+	var (
+		is  = is.New(t)
+		svc = todos.NewService(inmem.NewTodoStore())
+	)
 
 	todo := todos.Todo{Name: "Internet ki complaint karo"}
-	if err := svc.Save(&todo); err != nil {
-		t.Fatalf("could not save todo: %v", err)
-	}
+	is.NoErr(svc.Save(&todo)) // could not save todo
 
 	todo.Name = "Bijli* ki complaint karo"
 	todo.Done = true
-	if err := svc.Update(&todo); err != nil {
-		t.Fatalf("could not update todo: %v", err)
-	}
+	is.NoErr(svc.Update(&todo)) // could not update todo
 
 	todolist, err := svc.List()
-	if err != nil {
-		t.Fatalf("could not list todos: %v", err)
-	}
-
-	if len(todolist) != 1 {
-		t.Fatalf("unexpected number of todos after update")
-	}
-
-	if todo.ID != todolist[0].ID {
-		t.Fatalf("expected IDs to match")
-	}
-
-	if todo.Done != todolist[0].Done {
-		t.Fatalf("expected Done to be updated")
-	}
-
-	if todo.Name != todolist[0].Name {
-		t.Fatalf("expected Name to be updated")
-	}
+	is.NoErr(err)                         // could not list todos
+	is.Equal(len(todolist), 1)            // unexpected number of todos after update
+	is.Equal(todo.ID, todolist[0].ID)     // expected IDs to match
+	is.Equal(todo.Name, todolist[0].Name) // expected Name to be updated
+	is.Equal(todo.Done, todolist[0].Done) // expected Done to be updated
 }
