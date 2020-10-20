@@ -15,8 +15,7 @@ type Handler struct {
 }
 
 func (h *Handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid todo ID")
 		return
@@ -52,8 +51,7 @@ func (h *Handler) SaveTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RemoveTodo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid todo ID")
 		return
