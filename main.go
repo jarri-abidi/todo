@@ -6,21 +6,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jarri-abidi/todolist/handlers"
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
 )
 
 func main() {
-	h := handlers.Handler{Service: todos.NewService(inmem.NewTodoStore())}
+	var (
+		store   = inmem.NewTodoStore()
+		service = todos.NewService(store)
+		handler = handlers.New(service)
+		router  = mux.NewRouter()
+	)
 
-	router := mux.NewRouter()
 	router.Use(commonMiddleware)
-	router.HandleFunc("/todos", h.ListTodos).Methods("GET")
-	router.HandleFunc("/todos", h.SaveTodo).Methods("POST")
-	router.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
-	router.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
-	router.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
+	router.HandleFunc("/todos", handler.ListTodos).Methods("GET")
+	router.HandleFunc("/todos", handler.SaveTodo).Methods("POST")
+	router.HandleFunc("/todo/{id:[0-9]+}", handler.RemoveTodo).Methods("DELETE")
+	router.HandleFunc("/todo/{id:[0-9]+}", handler.ToggleTodo).Methods("PATCH")
+	router.HandleFunc("/todo/{id:[0-9]+}", handler.ReplaceTodo).Methods("PUT")
 
 	fmt.Println(`
 	 _____          _           __ _     _   

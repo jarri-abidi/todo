@@ -15,6 +15,10 @@ type Handler struct {
 	Service todos.Service
 }
 
+func New(service todos.Service) Handler {
+	return Handler{Service: service}
+}
+
 func (h *Handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	if err != nil {

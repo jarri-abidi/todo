@@ -44,7 +44,7 @@ func TestToggleTodo(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.Handler{Service: s}
+				h  = handlers.New(s)
 			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
@@ -98,7 +98,7 @@ func TestListTodos(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.Handler{Service: s}
+				h  = handlers.New(s)
 			)
 
 			for i := range tc.TodosInStore {
@@ -163,7 +163,7 @@ func TestReplaceTodo(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.Handler{Service: s}
+				h  = handlers.New(s)
 			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
