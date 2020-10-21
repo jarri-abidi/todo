@@ -57,8 +57,8 @@ func TestToggleTodo(t *testing.T) {
 
 			h.ToggleTodo(rec, req)
 
-			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected HTTP status code
-			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected HTTP response body
+			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
+			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body
 
 			todolist, err := s.List()
 			is.NoErr(err)                               // could not list todos
@@ -111,12 +111,12 @@ func TestListTodos(t *testing.T) {
 
 			h.ListTodos(rec, req)
 
-			is.Equal(rec.Result().StatusCode, http.StatusOK) // unexpected HTTP status code
+			is.Equal(rec.Result().StatusCode, http.StatusOK) // unexpected http status code
 
 			byt, err := json.Marshal(tc.TodosInStore)
 			is.NoErr(err) // invalid test data
 			expectedRspBody := string(byt)
-			is.Equal(rec.Body.String(), expectedRspBody) // unexpected HTTP response body
+			is.Equal(rec.Body.String(), expectedRspBody) // unexpected http response body
 		})
 	}
 }
@@ -176,8 +176,8 @@ func TestReplaceTodo(t *testing.T) {
 
 			h.ReplaceTodo(rec, req)
 
-			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected HTTP status code
-			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected HTTP response body
+			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
+			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body
 
 			todolist, err := s.List()
 			is.NoErr(err) // could not list todos
