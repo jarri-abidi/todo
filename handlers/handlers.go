@@ -47,7 +47,7 @@ func (h *Handler) SaveTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req request
-	if err := bindFromJSON(r, req); err != nil {
+	if err := bindFromJSON(r, &req); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -111,9 +111,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	}
 }
 
-func bindFromJSON(r *http.Request, request interface{}) error {
+func bindFromJSON(r *http.Request, dest interface{}) error {
 	defer r.Body.Close()
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
 		return errors.New("Invalid request body")
 	}
 	return nil
