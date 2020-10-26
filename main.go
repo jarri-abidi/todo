@@ -69,13 +69,12 @@ func newServer(port int, handler http.Handler) *http.Server {
 
 func start(srv *http.Server, stop, fail chan error) {
 	log.Printf("Started HTTP server on %s\n", srv.Addr)
-	if err := srv.ListenAndServe(); err != nil {
-		if err == http.ErrServerClosed {
-			stop <- err
-			return
-		}
-		fail <- err
+	err := srv.ListenAndServe()
+	if err == http.ErrServerClosed {
+		stop <- err
+		return
 	}
+	fail <- err
 }
 
 func shutDown(srv *http.Server, wait time.Duration) {
