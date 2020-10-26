@@ -1,17 +1,17 @@
-package handlers_test
+package handler_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/matryer/is"
 
-	"github.com/jarri-abidi/todolist/handlers"
+	"github.com/jarri-abidi/todolist/handler"
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
 )
@@ -29,8 +29,8 @@ func TestToggleTodo(t *testing.T) {
 			"1", http.StatusNoContent, `null`, true,
 		},
 		{
-			"Returns 400 and error msg for non-numeric id",
-			"meow", http.StatusBadRequest, `{"error":"Invalid todo ID"}`, false,
+			"Returns 404 and error msg for non-numeric id",
+			"meow", http.StatusNotFound, `{"error":"page not found"}`, false,
 		},
 		{
 			"Returns 404 and error msg for id of todo that doesn't exist",
@@ -44,18 +44,18 @@ func TestToggleTodo(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.New(s)
+				h  = handler.New(s)
 			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
 			is.NoErr(s.Save(&todo)) // could not save todo
 
 			rec := httptest.NewRecorder()
-			req, err := http.NewRequest("PATCH", "/todo/:id", nil)
+			url := fmt.Sprintf("/todo/%s", tc.TodoID)
+			req, err := http.NewRequest("PATCH", url, nil)
 			is.NoErr(err) // could not create http request
-			req = mux.SetURLVars(req, map[string]string{"id": tc.TodoID})
 
-			h.ToggleTodo(rec, req)
+			h.ServeHTTP(rec, req)
 
 			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
 			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body
@@ -98,7 +98,7 @@ func TestListTodos(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.New(s)
+				h  = handler.New(s)
 			)
 
 			for i := range tc.TodosInStore {
@@ -109,7 +109,7 @@ func TestListTodos(t *testing.T) {
 			req, err := http.NewRequest("GET", "/todos", nil)
 			is.NoErr(err) // could not create http request
 
-			h.ListTodos(rec, req)
+			h.ServeHTTP(rec, req)
 
 			is.Equal(rec.Result().StatusCode, http.StatusOK) // unexpected http status code
 
@@ -169,18 +169,18 @@ func TestReplaceTodo(t *testing.T) {
 			var (
 				is = is.New(t)
 				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handlers.New(s)
+				h  = handler.New(s)
 			)
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
 			is.NoErr(s.Save(&todo)) // could not save todo
 
 			rec := httptest.NewRecorder()
-			req, err := http.NewRequest("PUT", "/todo/:id", strings.NewReader(tc.ReqBody))
+			url := fmt.Sprintf("/todo/%s", tc.TodoID)
+			req, err := http.NewRequest("PUT", url, strings.NewReader(tc.ReqBody))
 			is.NoErr(err) // could not create http request
-			req = mux.SetURLVars(req, map[string]string{"id": tc.TodoID})
 
-			h.ReplaceTodo(rec, req)
+			h.ServeHTTP(rec, req)
 
 			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
 			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body

@@ -10,9 +10,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/gorilla/mux"
-
-	"github.com/jarri-abidi/todolist/handlers"
+	"github.com/jarri-abidi/todolist/handler"
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
 )
@@ -27,17 +25,9 @@ func main() {
 	var (
 		store   = inmem.NewTodoStore()
 		service = todos.NewService(store)
-		handler = handlers.New(service)
-		router  = mux.NewRouter()
+		router  = handler.New(service)
 		server  = newServer(port, router)
 	)
-
-	router.Use(commonMiddleware)
-	router.HandleFunc("/todos", handler.ListTodos).Methods("GET")
-	router.HandleFunc("/todos", handler.SaveTodo).Methods("POST")
-	router.HandleFunc("/todo/{id:[0-9]+}", handler.RemoveTodo).Methods("DELETE")
-	router.HandleFunc("/todo/{id:[0-9]+}", handler.ToggleTodo).Methods("PATCH")
-	router.HandleFunc("/todo/{id:[0-9]+}", handler.ReplaceTodo).Methods("PUT")
 
 	fmt.Println(`
 	 _____          _           __ _     _   
@@ -47,25 +37,15 @@ func main() {
 	 \/   \___/ \__,_|\___/  \____/_|___/\__|
 	`)
 
-	done := make(chan error, 1)
+	stop := make(chan error, 1)
 	fail := make(chan error, 1)
-	go func() {
-		log.Printf("Started HTTP server on %s\n", server.Addr)
-		if err := server.ListenAndServe(); err != nil {
-			if err == http.ErrServerClosed {
-				done <- err
-				return
-			}
-			fail <- err
-		}
-	}()
-
+	go start(server, stop, fail)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
 	for {
 		select {
-		case msg := <-done:
+		case msg := <-stop:
 			log.Println(msg)
 			os.Exit(0)
 		case err := <-fail:
@@ -76,22 +56,26 @@ func main() {
 	}
 }
 
-func newServer(port int, router http.Handler) *http.Server {
+func newServer(port int, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%d", port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      router,
+		Handler:      handler,
 	}
 }
 
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
+func start(srv *http.Server, stop, fail chan error) {
+	log.Printf("Started HTTP server on %s\n", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil {
+		if err == http.ErrServerClosed {
+			stop <- err
+			return
+		}
+		fail <- err
+	}
 }
 
 func shutDown(srv *http.Server, wait time.Duration) {
