@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -40,19 +41,24 @@ func (h *Handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SaveTodo(w http.ResponseWriter, r *http.Request) {
-	var t todos.Todo
-	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+	type request struct {
+		Name string `json:"name"`
+		Done bool   `json:"done"`
+	}
+
+	var req request
+	if err := bindFromJSON(r, req); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	defer r.Body.Close()
 
-	if err := h.Service.Save(&t); err != nil {
+	todo := todos.Todo{Name: req.Name, Done: req.Done}
+	if err := h.Service.Save(&todo); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, t)
+	respondWithJSON(w, http.StatusCreated, todo)
 }
 
 func (h *Handler) RemoveTodo(w http.ResponseWriter, r *http.Request) {
@@ -103,4 +109,12 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	if _, err := w.Write(response); err != nil {
 		log.Printf("could not write http response: %v", err)
 	}
+}
+
+func bindFromJSON(r *http.Request, request interface{}) error {
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return errors.New("Invalid request body")
+	}
+	return nil
 }
