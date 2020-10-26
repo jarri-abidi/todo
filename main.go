@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -14,10 +19,17 @@ import (
 
 func main() {
 	var (
+		wait = *flag.Duration("graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+		port = *flag.Int("port", 8085, "the port on which the server should listen to - e.g. 8080 or 443")
+	)
+	flag.Parse()
+
+	var (
 		store   = inmem.NewTodoStore()
 		service = todos.NewService(store)
 		handler = handlers.New(service)
 		router  = mux.NewRouter()
+		server  = newServer(port, router)
 	)
 
 	router.Use(commonMiddleware)
@@ -29,13 +41,50 @@ func main() {
 
 	fmt.Println(`
 	 _____          _           __ _     _   
-	/__   \___   __| | ___     / /(_)___| |_ 
+   	/__   \___   __| | ___     / /(_)___| |_ 
 	  / /\/ _ \ / _  |/ _ \   / / | / __| __|
 	 / / | (_) | (_| | (_) | / /__| \__ \ |_ 
 	 \/   \___/ \__,_|\___/  \____/_|___/\__|
 	`)
-	log.Print("Started HTTP server on port 8085")
-	log.Fatal(http.ListenAndServe(":8085", router))
+
+	done := make(chan error, 1)
+	fail := make(chan error, 1)
+	go func() {
+		log.Printf("Started HTTP server on %s\n", server.Addr)
+		if err := server.ListenAndServe(); err != nil {
+			if err == http.ErrServerClosed {
+				done <- err
+				return
+			}
+			fail <- err
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+
+	for {
+		select {
+		case msg := <-done:
+			log.Println(msg)
+			os.Exit(0)
+		case err := <-fail:
+			log.Fatal(err)
+		case <-quit:
+			shutDown(server, wait)
+		}
+	}
+}
+
+func newServer(port int, router http.Handler) *http.Server {
+	return &http.Server{
+		Addr: fmt.Sprintf("0.0.0.0:%d", port),
+		// Good practice to set timeouts to avoid Slowloris attacks.
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      router,
+	}
 }
 
 func commonMiddleware(next http.Handler) http.Handler {
@@ -43,4 +92,12 @@ func commonMiddleware(next http.Handler) http.Handler {
 		w.Header().Add("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func shutDown(srv *http.Server, wait time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("could not shut down: %v", err)
+	}
 }
