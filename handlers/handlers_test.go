@@ -155,6 +155,12 @@ func TestReplaceTodo(t *testing.T) {
 			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
 			`{"error": "Invalid request body"}`,
 		},
+		{
+			"Returns 400 and error msg for blank name",
+			`{"name": "	", "done": true}`,
+			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
+			`{"error": "Name cannot be blank"}`,
+		},
 	}
 
 	is := is.New(t)
