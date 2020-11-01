@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -133,33 +132,33 @@ func TestReplaceTodo(t *testing.T) {
 	}{
 		{
 			"Returns 200 and updates todo for valid request",
-			`{"name": "Pawdo ko paani daal do", "done": true}`,
+			`{"name":"Pawdo ko paani daal do","done":true}`,
 			"1", "Pawdo ko paani daal do", true, http.StatusOK,
-			`{"id": 1, "name": "Pawdo ko paani daal do", "done": true}`,
+			`{"id": 1,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
 			"Returns 201 and creates todo for valid request if it doesn't exist",
-			`{"name": "Pawdo ko paani daal do", "done": true}`,
+			`{"name":"Pawdo ko paani daal do","done":true}`,
 			"1337", "Pawdo ko paani daal do", false, http.StatusCreated,
-			`{"id": 1337, "name": "Pawdo ko paani daal do", "done": true}`,
+			`{"id":1337,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
-			"Returns 400 and error msg for non-numeric id",
+			"Returns 404 and error msg for non-numeric id",
 			`{"name": "Pawdo ko paani daal do", "done": true}`,
-			"meow", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error": "Invalid todo ID"}`,
+			"meow", "Gaari ki service karwalo", false, http.StatusNotFound,
+			`{"error":"page not found"}`,
 		},
 		{
 			"Returns 400 and error msg for invalid json",
 			`>?!{"name": "ye kya horaha hai}`,
 			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error": "Invalid request body"}`,
+			`{"error":"invalid request body"}`,
 		},
 		{
 			"Returns 400 and error msg for blank name",
 			`{"name": "	", "done": true}`,
 			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error": "Name cannot be blank"}`,
+			`{"error":"name cannot be blank"}`,
 		},
 	}
 
@@ -172,8 +171,8 @@ func TestReplaceTodo(t *testing.T) {
 				h  = handler.New(s)
 			)
 
-			todo := todos.Todo{Name: "Gaari ki service karwalo"}
-			is.NoErr(s.Save(&todo)) // could not save todo
+			savedTodo := todos.Todo{Name: "Gaari ki service karwalo"}
+			is.NoErr(s.Save(&savedTodo)) // could not save todo
 
 			rec := httptest.NewRecorder()
 			url := fmt.Sprintf("/todo/%s", tc.TodoID)
@@ -189,7 +188,7 @@ func TestReplaceTodo(t *testing.T) {
 			is.NoErr(err) // could not list todos
 
 			for _, todo := range todolist {
-				if strconv.FormatInt(todo.ID, 10) == tc.TodoID {
+				if todo.ID == savedTodo.ID {
 					is.Equal(todo.Name, tc.ExpectedName) // expected Name to be updated
 					is.Equal(todo.Done, tc.ExpectedDone) // expected Done to be updated
 					return
