@@ -23,10 +23,10 @@ func main() {
 	flag.Parse()
 
 	var (
-		store           = inmem.NewTodoStore()
-		service         = todos.NewService(store)
-		router, cleanup = handler.New(service)
-		server          = newServer(port, router)
+		store             = inmem.NewTodoStore()
+		service           = todos.NewService(store)
+		router, resources = handler.New(service)
+		server            = newServer(port, router)
 	)
 
 	fmt.Println(`
@@ -47,10 +47,10 @@ func main() {
 		select {
 		case msg := <-stop:
 			log.Println(msg)
-			cleanup()
+			resources.Close()
 			os.Exit(0)
 		case err := <-fail:
-			cleanup()
+			resources.Close()
 			log.Fatal(err)
 		case <-quit:
 			shutDown(server, wait)

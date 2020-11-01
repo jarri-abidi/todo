@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -18,7 +19,7 @@ type handler struct {
 }
 
 // New creates and returns an http.Handler using gorilla/mux.
-func New(svc todos.Service) (http.Handler, func()) {
+func New(svc todos.Service) (http.Handler, io.Closer) {
 	tracer := initTracer()
 	h := handler{
 		Router:  mux.NewRouter(),
@@ -36,7 +37,7 @@ func New(svc todos.Service) (http.Handler, func()) {
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
 	h.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
-	return &h, func() { tracer.Close() }
+	return &h, tracer
 }
 
 func commonMiddleware(next http.Handler) http.Handler {

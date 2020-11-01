@@ -43,7 +43,7 @@ func tracingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// InitTracer creates a new trace provider instance and registers it as global trace provider.
+// initTracer creates a new trace provider instance and registers it as global trace provider.
 func initTracer() io.Closer {
 	// Sample configuration for testing. Use constant sampling to sample every trace
 	// and enable LogSpan to log every span via configured Logger.
