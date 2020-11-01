@@ -18,13 +18,17 @@ type handler struct {
 }
 
 // New creates and returns an http.Handler using gorilla/mux.
-func New(svc todos.Service) http.Handler {
+func New(svc todos.Service) (http.Handler, func()) {
+	tracer := initTracer()
 	h := handler{
 		Router:  mux.NewRouter(),
 		service: svc,
 	}
 
 	h.Use(commonMiddleware)
+	h.Use(tracingMiddleware)
+	h.Use(metricsMiddleware)
+	h.Handle("/metrics", metricsHandler)
 	h.HandleFunc("/todos", h.ListTodos).Methods("GET")
 	h.HandleFunc("/todos", h.SaveTodo).Methods("POST")
 	h.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
@@ -32,7 +36,7 @@ func New(svc todos.Service) http.Handler {
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
 	h.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
-	return &h
+	return &h, func() { tracer.Close() }
 }
 
 func commonMiddleware(next http.Handler) http.Handler {
