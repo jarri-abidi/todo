@@ -11,7 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/uber/jaeger-client-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics"
 )
 
@@ -61,7 +62,7 @@ func initTracer() io.Closer {
 	// Example logger and metrics factory. Use github.com/uber/jaeger-client-go/log
 	// and github.com/uber/jaeger-lib/metrics respectively to bind to real logging and metrics
 	// frameworks.
-	jLogger := jaegerlog.StdLogger
+	jLogger := jaeger.NullLogger
 	jMetricsFactory := metrics.NullFactory
 
 	// Initialize tracer with a logger and a metrics factory
