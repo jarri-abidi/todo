@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"github.com/jarri-abidi/todolist/todos"
@@ -27,6 +29,7 @@ func New(svc todos.Service) (http.Handler, io.Closer) {
 	}
 
 	h.Use(commonMiddleware)
+	h.Use(loggingMiddleware)
 	h.Use(tracingMiddleware)
 	h.Use(metricsMiddleware)
 	h.Handle("/metrics", metricsHandler)
@@ -35,7 +38,8 @@ func New(svc todos.Service) (http.Handler, io.Closer) {
 	h.HandleFunc("/todo/{id:[0-9]+}", h.RemoveTodo).Methods("DELETE")
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
-	h.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+	h.NotFoundHandler = loggingMiddleware(http.HandlerFunc(notFound))
+	h.MethodNotAllowedHandler = loggingMiddleware(h.MethodNotAllowedHandler)
 
 	return &h, tracer
 }
@@ -47,7 +51,13 @@ func commonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+func loggingMiddleware(next http.Handler) http.Handler {
+	return handlers.CustomLoggingHandler(os.Stdout, next, func(writer io.Writer, params handlers.LogFormatterParams) {
+		log.Printf(`"%s %s %s" %d`, params.Request.Method, params.Request.URL, params.Request.Proto, params.StatusCode)
+	})
+}
+
+func notFound(w http.ResponseWriter, r *http.Request) {
 	respondWithError(w, http.StatusNotFound, "page not found")
 }
 
@@ -57,6 +67,10 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
+
+	if payload == nil {
+		return
+	}
 
 	response, err := json.Marshal(payload)
 	if err != nil {
