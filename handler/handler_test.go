@@ -25,11 +25,11 @@ func TestToggleTodo(t *testing.T) {
 	}{
 		{
 			"Returns 204 and toggles for valid request",
-			"1", http.StatusNoContent, `null`, true,
+			"1", http.StatusNoContent, ``, true,
 		},
 		{
 			"Returns 404 and error msg for non-numeric id",
-			"meow", http.StatusNotFound, `{"error":"page not found"}`, false,
+			"meow", http.StatusNotFound, `{"error":"resource not found"}`, false,
 		},
 		{
 			"Returns 404 and error msg for id of todo that doesn't exist",
@@ -41,10 +41,11 @@ func TestToggleTodo(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
-				is = is.New(t)
-				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handler.New(s)
+				is   = is.New(t)
+				s    = todos.NewService(inmem.NewTodoStore())
+				h, r = handler.New(s)
 			)
+			defer r.Close()
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
 			is.NoErr(s.Save(&todo)) // could not save todo
@@ -95,10 +96,11 @@ func TestListTodos(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
-				is = is.New(t)
-				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handler.New(s)
+				is   = is.New(t)
+				s    = todos.NewService(inmem.NewTodoStore())
+				h, r = handler.New(s)
 			)
+			defer r.Close()
 
 			for i := range tc.TodosInStore {
 				is.NoErr(s.Save(&tc.TodosInStore[i])) // could not save todo
@@ -146,7 +148,7 @@ func TestReplaceTodo(t *testing.T) {
 			"Returns 404 and error msg for non-numeric id",
 			`{"name": "Pawdo ko paani daal do", "done": true}`,
 			"meow", "Gaari ki service karwalo", false, http.StatusNotFound,
-			`{"error":"page not found"}`,
+			`{"error":"resource not found"}`,
 		},
 		{
 			"Returns 400 and error msg for invalid json",
@@ -166,10 +168,11 @@ func TestReplaceTodo(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
-				is = is.New(t)
-				s  = todos.NewService(inmem.NewTodoStore())
-				h  = handler.New(s)
+				is   = is.New(t)
+				s    = todos.NewService(inmem.NewTodoStore())
+				h, r = handler.New(s)
 			)
+			defer r.Close()
 
 			savedTodo := todos.Todo{Name: "Gaari ki service karwalo"}
 			is.NoErr(s.Save(&savedTodo)) // could not save todo
