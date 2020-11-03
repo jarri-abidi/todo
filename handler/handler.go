@@ -28,7 +28,6 @@ func New(svc todos.Service) (http.Handler, io.Closer) {
 		service: svc,
 	}
 
-	h.Use(commonMiddleware)
 	h.Use(loggingMiddleware)
 	h.Use(tracingMiddleware)
 	h.Use(metricsMiddleware)
@@ -39,16 +38,9 @@ func New(svc todos.Service) (http.Handler, io.Closer) {
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ToggleTodo).Methods("PATCH")
 	h.HandleFunc("/todo/{id:[0-9]+}", h.ReplaceTodo).Methods("PUT")
 	h.NotFoundHandler = loggingMiddleware(http.HandlerFunc(notFound))
-	h.MethodNotAllowedHandler = loggingMiddleware(h.MethodNotAllowedHandler)
+	h.MethodNotAllowedHandler = loggingMiddleware(http.HandlerFunc(methodNotAllowed))
 
 	return &h, tracer
-}
-
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -58,7 +50,11 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
-	respondWithError(w, http.StatusNotFound, "page not found")
+	respondWithError(w, http.StatusNotFound, "resource not found")
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	respondWithError(w, http.StatusMethodNotAllowed, "method not allowed")
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -71,6 +67,8 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	if payload == nil {
 		return
 	}
+
+	w.Header().Add("Content-Type", "application/json")
 
 	response, err := json.Marshal(payload)
 	if err != nil {
