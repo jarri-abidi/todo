@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,23 +9,23 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/jarri-abidi/todolist/config"
 	"github.com/jarri-abidi/todolist/handler"
 	"github.com/jarri-abidi/todolist/inmem"
 	"github.com/jarri-abidi/todolist/todos"
 )
 
 func main() {
-	var (
-		wait = *flag.Duration("graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
-		port = *flag.Int("port", 8085, "the port on which the server should listen to - e.g. 8080 or 443")
-	)
-	flag.Parse()
+	conf, err := config.Load(".", "app.env")
+	if err != nil {
+		log.Fatalf("could not load config: %v", err)
+	}
 
 	var (
 		store             = inmem.NewTodoStore()
 		service           = todos.NewService(store)
 		router, resources = handler.New(service)
-		server            = newServer(port, router)
+		server            = newServer(conf, router)
 	)
 
 	fmt.Println(`
@@ -53,18 +52,17 @@ func main() {
 			resources.Close()
 			log.Fatal(err)
 		case <-quit:
-			shutDown(server, wait)
+			shutDown(server, conf.GracefulShutdownTimeout)
 		}
 	}
 }
 
-func newServer(port int, handler http.Handler) *http.Server {
+func newServer(conf config.Config, handler http.Handler) *http.Server {
 	return &http.Server{
-		Addr: fmt.Sprintf("0.0.0.0:%d", port),
-		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
+		Addr:         conf.ServerAddress,
+		WriteTimeout: conf.ServerWriteTimeout,
+		ReadTimeout:  conf.ServerReadTimeout,
+		IdleTimeout:  conf.ServerIdleTimeout,
 		Handler:      handler,
 	}
 }
