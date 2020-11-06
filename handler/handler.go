@@ -62,13 +62,13 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.WriteHeader(code)
-
 	if payload == nil {
+		w.WriteHeader(code)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(code)
 
 	response, err := json.Marshal(payload)
 	if err != nil {
