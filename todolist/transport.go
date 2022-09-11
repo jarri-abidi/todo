@@ -26,9 +26,17 @@ func MakeHandler(s Service, logger kitlog.Logger) http.Handler {
 		opts...,
 	)
 
+	listTodosHandler := kithttp.NewServer(
+		makeListTodosEndpoint(s),
+		kithttp.NopRequestDecoder,
+		encodeResponse,
+		opts...,
+	)
+
 	r := mux.NewRouter()
 
 	r.Handle("/todolist/v1/todos", saveTodoHandler).Methods("POST")
+	r.Handle("/todolist/v1/todos", listTodosHandler).Methods("GET")
 
 	return r
 }

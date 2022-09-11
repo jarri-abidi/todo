@@ -13,19 +13,29 @@ type saveTodoRequest struct {
 }
 
 type saveTodoResponse struct {
-	ID   int64  `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Done bool   `json:"done,omitempty"`
-	Err  error  `json:"error,omitempty"`
+	Todo *todos.Todo `json:"todo,omitempty"`
+	Err  error       `json:"error,omitempty"`
 }
 
 func (r saveTodoResponse) error() error { return r.Err }
+
+type listTodosResponse struct {
+	Todos []todos.Todo `json:"todos"`
+	Err   error        `json:"error,omitempty"`
+}
 
 func makeSaveTodoEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(saveTodoRequest)
 		todo := &todos.Todo{Name: req.Name}
 		err := s.Save(ctx, todo)
-		return saveTodoResponse{todo.ID, todo.Name, todo.Done, err}, nil
+		return saveTodoResponse{todo, err}, nil
+	}
+}
+
+func makeListTodosEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, _ interface{}) (interface{}, error) {
+		todos, err := s.List(ctx)
+		return listTodosResponse{todos, err}, nil
 	}
 }

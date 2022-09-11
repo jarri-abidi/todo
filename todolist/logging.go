@@ -30,3 +30,14 @@ func (s *loggingService) Save(ctx context.Context, todo *todos.Todo) (err error)
 	}(time.Now())
 	return s.Service.Save(ctx, todo)
 }
+
+func (s *loggingService) List(ctx context.Context) (todos []todos.Todo, err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "list",
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.List(ctx)
+}
