@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"context"
 	"sync"
 
 	"github.com/jarri-abidi/todolist/todos"
@@ -17,13 +18,13 @@ func NewTodoStore() todos.Store {
 	return &todoStore{todolist: []todos.Todo{}, used: make(map[int64]bool)}
 }
 
-func (ts *todoStore) Insert(todo *todos.Todo) error {
+func (ts *todoStore) Insert(_ context.Context, todo *todos.Todo) error {
 	ts.Lock()
 	defer ts.Unlock()
 
 	if todo.ID != 0 {
 		if ts.used[todo.ID] {
-			return todos.ErrTodoAlreadyExists
+			return todos.ErrAlreadyExists
 		}
 
 		ts.used[todo.ID] = true
@@ -42,14 +43,14 @@ func (ts *todoStore) Insert(todo *todos.Todo) error {
 	return nil
 }
 
-func (ts *todoStore) FindAll() ([]todos.Todo, error) {
+func (ts *todoStore) FindAll(_ context.Context) ([]todos.Todo, error) {
 	ts.RLock()
 	defer ts.RUnlock()
 
 	return ts.todolist, nil
 }
 
-func (ts *todoStore) FindByID(id int64) (*todos.Todo, error) {
+func (ts *todoStore) FindByID(_ context.Context, id int64) (*todos.Todo, error) {
 	ts.RLock()
 	defer ts.RUnlock()
 
@@ -58,10 +59,10 @@ func (ts *todoStore) FindByID(id int64) (*todos.Todo, error) {
 			return &ts.todolist[i], nil
 		}
 	}
-	return nil, todos.ErrTodoNotFound
+	return nil, todos.ErrNotFound
 }
 
-func (ts *todoStore) Update(todo *todos.Todo) error {
+func (ts *todoStore) Update(_ context.Context, todo *todos.Todo) error {
 	ts.Lock()
 	defer ts.Unlock()
 
@@ -71,10 +72,10 @@ func (ts *todoStore) Update(todo *todos.Todo) error {
 			return nil
 		}
 	}
-	return todos.ErrTodoNotFound
+	return todos.ErrNotFound
 }
 
-func (ts *todoStore) DeleteByID(id int64) error {
+func (ts *todoStore) DeleteByID(_ context.Context, id int64) error {
 	ts.Lock()
 	defer ts.Unlock()
 
@@ -84,5 +85,5 @@ func (ts *todoStore) DeleteByID(id int64) error {
 			return nil
 		}
 	}
-	return todos.ErrTodoNotFound
+	return todos.ErrNotFound
 }

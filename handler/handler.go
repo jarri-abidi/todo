@@ -12,16 +12,17 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
+	"github.com/jarri-abidi/todolist/todolist"
 	"github.com/jarri-abidi/todolist/todos"
 )
 
 type handler struct {
 	*mux.Router
-	service todos.Service
+	service todolist.Service
 }
 
 // New creates and returns an http.Handler using gorilla/mux.
-func New(svc todos.Service) (http.Handler, io.Closer) {
+func New(svc todolist.Service) (http.Handler, io.Closer) {
 	tracer := initTracer()
 	h := handler{
 		Router:  mux.NewRouter(),
@@ -96,8 +97,8 @@ func (h *handler) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.ToggleDone(id)
-	if err == todos.ErrTodoNotFound {
+	err = h.service.ToggleDone(r.Context(), id)
+	if err == todos.ErrNotFound {
 		respondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -122,7 +123,7 @@ func (h *handler) SaveTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todo := todos.Todo{Name: req.Name, Done: req.Done}
-	if err := h.service.Save(&todo); err != nil {
+	if err := h.service.Save(r.Context(), &todo); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -137,8 +138,8 @@ func (h *handler) RemoveTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.Remove(id)
-	if err == todos.ErrTodoNotFound {
+	err = h.service.Remove(r.Context(), id)
+	if err == todos.ErrNotFound {
 		respondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -151,7 +152,7 @@ func (h *handler) RemoveTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) ListTodos(w http.ResponseWriter, r *http.Request) {
-	todolist, err := h.service.List()
+	todolist, err := h.service.List(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
