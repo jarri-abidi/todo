@@ -19,11 +19,6 @@ type saveTodoResponse struct {
 
 func (r saveTodoResponse) error() error { return r.Err }
 
-type listTodosResponse struct {
-	Todos []todos.Todo `json:"todos"`
-	Err   error        `json:"error,omitempty"`
-}
-
 func makeSaveTodoEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(saveTodoRequest)
@@ -33,9 +28,38 @@ func makeSaveTodoEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+type listTodosResponse struct {
+	Todos []todos.Todo `json:"todos"`
+	Err   error        `json:"error,omitempty"`
+}
+
 func makeListTodosEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, _ interface{}) (interface{}, error) {
 		todos, err := s.List(ctx)
 		return listTodosResponse{todos, err}, nil
+	}
+}
+
+type removeTodoRequest struct {
+	id int64
+}
+
+func makeRemoveTodoEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(removeTodoRequest)
+		err := s.Remove(ctx, req.id)
+		return nil, err
+	}
+}
+
+type toggleTodoRequest struct {
+	id int64
+}
+
+func makeToggleTodoEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(toggleTodoRequest)
+		err := s.ToggleDone(ctx, req.id)
+		return nil, err
 	}
 }
