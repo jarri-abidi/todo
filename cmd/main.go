@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	kitlog "github.com/go-kit/log"
+	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/jarri-abidi/todolist/config"
@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	logger := kitlog.NewLogfmtLogger(os.Stderr)
+	logger := log.NewLogfmtLogger(os.Stderr)
 
 	conf, err := config.Load(".", "app.env")
 	if err != nil {

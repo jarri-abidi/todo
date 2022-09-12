@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
-	kitlog "github.com/go-kit/log"
+	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
@@ -22,7 +22,7 @@ type ErrInvalidRequestBody struct{ err error }
 
 func (e ErrInvalidRequestBody) Error() string { return fmt.Sprintf("invalid request body: %v", e.err) }
 
-func MakeHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeHandler(s Service, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(encodeError),

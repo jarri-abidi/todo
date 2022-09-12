@@ -41,3 +41,27 @@ func (s *loggingService) List(ctx context.Context) (todos []todos.Todo, err erro
 	}(time.Now())
 	return s.Service.List(ctx)
 }
+
+func (s *loggingService) Remove(ctx context.Context, id int64) (err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "remove",
+			"id", id,
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.Remove(ctx, id)
+}
+
+func (s *loggingService) ToggleDone(ctx context.Context, id int64) (err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "toggle_done",
+			"id", id,
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.ToggleDone(ctx, id)
+}
