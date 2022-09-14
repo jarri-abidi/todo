@@ -3,10 +3,10 @@
 default: build
 
 build:
-	go build -o todolist
+	go build -o app cmd/main.go
 
 test:
 	go test -cover ./...
 
 run: build
-	./todolist
+	./app
