@@ -1,4 +1,4 @@
 # binaries and executables
 *.exe
 *.exe~
-main
+app
