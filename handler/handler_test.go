@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/jarri-abidi/todolist/handler"
 	"github.com/jarri-abidi/todolist/inmem"
+	"github.com/jarri-abidi/todolist/todolist"
 	"github.com/jarri-abidi/todolist/todos"
 )
 
@@ -42,13 +44,13 @@ func TestToggleTodo(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
 				is   = is.New(t)
-				s    = todos.NewService(inmem.NewTodoStore())
-				h, r = handler.New(s)
+				svc  = todolist.NewService(inmem.NewTodoStore())
+				h, r = handler.New(svc)
 			)
 			defer r.Close()
 
 			todo := todos.Todo{Name: "Gaari ki service karwalo"}
-			is.NoErr(s.Save(&todo)) // could not save todo
+			is.NoErr(svc.Save(context.TODO(), &todo)) // could not save todo
 
 			rec := httptest.NewRecorder()
 			url := fmt.Sprintf("/todo/%s", tc.TodoID)
@@ -60,7 +62,7 @@ func TestToggleTodo(t *testing.T) {
 			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
 			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body
 
-			todolist, err := s.List()
+			todolist, err := svc.List(context.TODO())
 			is.NoErr(err)                               // could not list todos
 			is.Equal(todolist[0].Done, tc.ExpectedDone) // todo should be toggled
 		})
@@ -97,13 +99,13 @@ func TestListTodos(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
 				is   = is.New(t)
-				s    = todos.NewService(inmem.NewTodoStore())
-				h, r = handler.New(s)
+				svc  = todolist.NewService(inmem.NewTodoStore())
+				h, r = handler.New(svc)
 			)
 			defer r.Close()
 
 			for i := range tc.TodosInStore {
-				is.NoErr(s.Save(&tc.TodosInStore[i])) // could not save todo
+				is.NoErr(svc.Save(context.TODO(), &tc.TodosInStore[i])) // could not save todo
 			}
 
 			rec := httptest.NewRecorder()
@@ -169,13 +171,13 @@ func TestReplaceTodo(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			var (
 				is   = is.New(t)
-				s    = todos.NewService(inmem.NewTodoStore())
-				h, r = handler.New(s)
+				svc  = todolist.NewService(inmem.NewTodoStore())
+				h, r = handler.New(svc)
 			)
 			defer r.Close()
 
 			savedTodo := todos.Todo{Name: "Gaari ki service karwalo"}
-			is.NoErr(s.Save(&savedTodo)) // could not save todo
+			is.NoErr(svc.Save(context.TODO(), &savedTodo)) // could not save todo
 
 			rec := httptest.NewRecorder()
 			url := fmt.Sprintf("/todo/%s", tc.TodoID)
@@ -187,7 +189,7 @@ func TestReplaceTodo(t *testing.T) {
 			is.Equal(rec.Result().StatusCode, tc.ExpectedCode) // unexpected http status code
 			is.Equal(rec.Body.String(), tc.ExpectedRspBody)    // unexpected http response body
 
-			todolist, err := s.List()
+			todolist, err := svc.List(context.TODO())
 			is.NoErr(err) // could not list todos
 
 			for _, todo := range todolist {

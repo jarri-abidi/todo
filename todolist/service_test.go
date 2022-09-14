@@ -1,29 +1,31 @@
-package todos_test
+package todolist_test
 
 import (
+	"context"
 	"testing"
 
-	"github.com/matryer/is"
-
 	"github.com/jarri-abidi/todolist/inmem"
+	"github.com/jarri-abidi/todolist/todolist"
 	"github.com/jarri-abidi/todolist/todos"
+
+	"github.com/matryer/is"
 )
 
 func TestSave(t *testing.T) {
 	var (
 		is  = is.New(t)
-		svc = todos.NewService(inmem.NewTodoStore())
+		svc = todolist.NewService(inmem.NewTodoStore())
 	)
 
 	todo := todos.Todo{Name: "Kachra phenk k ao", Done: false}
 
-	is.NoErr(svc.Save(&todo)) // could not save todo
+	is.NoErr(svc.Save(context.TODO(), &todo)) // could not save todo
 }
 
 func TestList(t *testing.T) {
 	var (
 		is  = is.New(t)
-		svc = todos.NewService(inmem.NewTodoStore())
+		svc = todolist.NewService(inmem.NewTodoStore())
 	)
 
 	expected := []todos.Todo{
@@ -33,10 +35,10 @@ func TestList(t *testing.T) {
 	}
 
 	for i := range expected {
-		is.NoErr(svc.Save(&expected[i])) // could not save todo
+		is.NoErr(svc.Save(context.TODO(), &expected[i])) // could not save todo
 	}
 
-	todolist, err := svc.List()
+	todolist, err := svc.List(context.TODO())
 	is.NoErr(err) // could not list todos
 
 	for i := range todolist {
@@ -49,15 +51,15 @@ func TestList(t *testing.T) {
 func TestToggleDone(t *testing.T) {
 	var (
 		is  = is.New(t)
-		svc = todos.NewService(inmem.NewTodoStore())
+		svc = todolist.NewService(inmem.NewTodoStore())
 	)
 
 	todo := todos.Todo{Name: "Kachra phenk k ao", Done: false}
-	is.NoErr(svc.Save(&todo)) // could not save todo
+	is.NoErr(svc.Save(context.TODO(), &todo)) // could not save todo
 
-	is.NoErr(svc.ToggleDone(todo.ID)) // could not toggle todo
+	is.NoErr(svc.ToggleDone(context.TODO(), todo.ID)) // could not toggle todo
 
-	todolist, err := svc.List()
+	todolist, err := svc.List(context.TODO())
 	is.NoErr(err)             // could not list todos
 	is.True(todolist[0].Done) // expected todo to be done
 }
@@ -65,15 +67,15 @@ func TestToggleDone(t *testing.T) {
 func TestRemove(t *testing.T) {
 	var (
 		is  = is.New(t)
-		svc = todos.NewService(inmem.NewTodoStore())
+		svc = todolist.NewService(inmem.NewTodoStore())
 	)
 
 	todo := todos.Todo{Name: "Kachra phenk k ao", Done: true}
-	is.NoErr(svc.Save(&todo)) // could not save todo
+	is.NoErr(svc.Save(context.TODO(), &todo)) // could not save todo
 
-	is.NoErr(svc.Remove(todo.ID)) // could not remove todo
+	is.NoErr(svc.Remove(context.TODO(), todo.ID)) // could not remove todo
 
-	todolist, err := svc.List()
+	todolist, err := svc.List(context.TODO())
 	is.NoErr(err)              // could not list todos
 	is.Equal(len(todolist), 0) // expected list to be empty after removing todo
 }
@@ -81,17 +83,17 @@ func TestRemove(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	var (
 		is  = is.New(t)
-		svc = todos.NewService(inmem.NewTodoStore())
+		svc = todolist.NewService(inmem.NewTodoStore())
 	)
 
 	todo := todos.Todo{Name: "Internet ki complaint karo"}
-	is.NoErr(svc.Save(&todo)) // could not save todo
+	is.NoErr(svc.Save(context.TODO(), &todo)) // could not save todo
 
 	todo.Name = "Bijli* ki complaint karo"
 	todo.Done = true
-	is.NoErr(svc.Update(&todo)) // could not update todo
+	is.NoErr(svc.Update(context.TODO(), &todo)) // could not update todo
 
-	todolist, err := svc.List()
+	todolist, err := svc.List(context.TODO())
 	is.NoErr(err)                         // could not list todos
 	is.Equal(len(todolist), 1)            // unexpected number of todos after update
 	is.Equal(todo.ID, todolist[0].ID)     // expected IDs to match
