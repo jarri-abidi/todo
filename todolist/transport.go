@@ -63,6 +63,9 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 	r.Handle("/todolist/v1/todo/{id:[0-9]+}", removeTodoHandler).Methods("DELETE")
 	r.Handle("/todolist/v1/todo/{id:[0-9]+}", toggleTodoHandler).Methods("PATCH")
 
+	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowed)
+	r.NotFoundHandler = http.HandlerFunc(notFound)
+
 	return r
 }
 
@@ -117,12 +120,14 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	switch err {
-	case todos.ErrNotFound:
+	case ErrResourceNotFound, todos.ErrNotFound:
 		w.WriteHeader(http.StatusNotFound)
 	case todos.ErrAlreadyExists:
 		w.WriteHeader(http.StatusConflict)
 	case ErrNonNumericTodoID:
 		w.WriteHeader(http.StatusBadRequest)
+	case ErrMethodNotAllowed:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	default:
 		switch err.(type) {
 		case ErrInvalidRequestBody:
@@ -133,4 +138,15 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{"error": err.Error()})
+}
+
+var ErrResourceNotFound = errors.New("resource not found")
+var ErrMethodNotAllowed = errors.New("method not allowed")
+
+func notFound(w http.ResponseWriter, r *http.Request) {
+	encodeError(context.Background(), ErrResourceNotFound, w)
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	encodeError(context.Background(), ErrMethodNotAllowed, w)
 }
