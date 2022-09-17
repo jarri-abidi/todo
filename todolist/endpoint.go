@@ -33,6 +33,8 @@ type listTodosResponse struct {
 	Err   error        `json:"error,omitempty"`
 }
 
+func (r listTodosResponse) error() error { return r.Err }
+
 func makeListTodosEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, _ interface{}) (interface{}, error) {
 		todos, err := s.List(ctx)
