@@ -17,6 +17,8 @@ import (
 )
 
 var ErrNonNumericTodoID = errors.New("todo id in path must be numeric")
+var ErrResourceNotFound = errors.New("resource not found")
+var ErrMethodNotAllowed = errors.New("method not allowed")
 
 type ErrInvalidRequestBody struct{ err error }
 
@@ -139,9 +141,6 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 	json.NewEncoder(w).Encode(map[string]interface{}{"error": err.Error()})
 }
-
-var ErrResourceNotFound = errors.New("resource not found")
-var ErrMethodNotAllowed = errors.New("method not allowed")
 
 func notFound(w http.ResponseWriter, r *http.Request) {
 	encodeError(context.Background(), ErrResourceNotFound, w)
