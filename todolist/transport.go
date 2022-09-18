@@ -74,7 +74,6 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 func decodeSaveTodoRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
 		Name string `json:"name"`
-		Done bool   `json:"done"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, ErrInvalidRequestBody{err}
