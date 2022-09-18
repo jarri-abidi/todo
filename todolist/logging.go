@@ -9,17 +9,17 @@ import (
 	"github.com/jarri-abidi/todolist/todos"
 )
 
-type loggingService struct {
+// LoggingMiddleware takes a logger as a dependency and returns a service Middleware.
+func LoggingMiddleware(logger log.Logger) Middleware {
+	return func(s Service) Service { return &loggingMiddleware{logger, s} }
+}
+
+type loggingMiddleware struct {
 	logger log.Logger
 	Service
 }
 
-// NewLoggingService returns a new instance of a logging Service.
-func NewLoggingService(logger log.Logger, s Service) Service {
-	return &loggingService{logger, s}
-}
-
-func (s *loggingService) Save(ctx context.Context, todo *todos.Todo) (err error) {
+func (s *loggingMiddleware) Save(ctx context.Context, todo *todos.Todo) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "save",
@@ -31,7 +31,7 @@ func (s *loggingService) Save(ctx context.Context, todo *todos.Todo) (err error)
 	return s.Service.Save(ctx, todo)
 }
 
-func (s *loggingService) List(ctx context.Context) (todos []todos.Todo, err error) {
+func (s *loggingMiddleware) List(ctx context.Context) (todos []todos.Todo, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "list",
@@ -42,7 +42,7 @@ func (s *loggingService) List(ctx context.Context) (todos []todos.Todo, err erro
 	return s.Service.List(ctx)
 }
 
-func (s *loggingService) Remove(ctx context.Context, id int64) (err error) {
+func (s *loggingMiddleware) Remove(ctx context.Context, id int64) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "remove",
@@ -54,7 +54,7 @@ func (s *loggingService) Remove(ctx context.Context, id int64) (err error) {
 	return s.Service.Remove(ctx, id)
 }
 
-func (s *loggingService) ToggleDone(ctx context.Context, id int64) (err error) {
+func (s *loggingMiddleware) ToggleDone(ctx context.Context, id int64) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "toggle_done",
