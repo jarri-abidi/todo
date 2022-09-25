@@ -16,6 +16,9 @@ type Service interface {
 	Update(context.Context, *todos.Todo) error
 }
 
+// Middleware describes a Service middleware.
+type Middleware func(Service) Service
+
 type service struct {
 	store todos.Store
 }

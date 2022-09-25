@@ -16,14 +16,14 @@ func TestLoad(t *testing.T) {
 		assert := assert.New(t)
 		require := require.New(t)
 
-		conf, err := config.Load("testdata/", "test.env")
+		conf, err := config.Load("testdata/test.env")
 		require.NoError(err) // could not load config
 
-		assert.Equal(conf.ServerAddress, "0.0.0.0:443")
-		assert.Equal(conf.ServerReadTimeout, 30*time.Second)
-		assert.Equal(conf.ServerWriteTimeout, 30*time.Second)
-		assert.Equal(conf.ServerIdleTimeout, 1*time.Minute)
-		assert.Equal(conf.GracefulShutdownTimeout, 45*time.Second)
+		assert.Equal("0.0.0.0:443", conf.ServerAddress)
+		assert.Equal(30*time.Second, conf.ServerReadTimeout)
+		assert.Equal(30*time.Second, conf.ServerWriteTimeout)
+		assert.Equal(1*time.Minute, conf.ServerIdleTimeout)
+		assert.Equal(45*time.Second, conf.GracefulShutdownTimeout)
 	})
 
 	t.Run("Overrides from env", func(t *testing.T) {
@@ -41,18 +41,18 @@ func TestLoad(t *testing.T) {
 		reset = setEnv("GRACEFUL_SHUTDOWN_TIMEOUT", "30s", assert)
 		defer reset()
 
-		conf, err := config.Load("testdata/", "test.env")
+		conf, err := config.Load("testdata/test.env")
 		require.NoError(err) // could not load config
 
-		assert.Equal(conf.ServerAddress, "127.0.0.1:80")
-		assert.Equal(conf.ServerReadTimeout, 15*time.Second)
-		assert.Equal(conf.ServerWriteTimeout, 15*time.Second)
-		assert.Equal(conf.ServerIdleTimeout, 2*time.Minute)
-		assert.Equal(conf.GracefulShutdownTimeout, 30*time.Second)
+		assert.Equal("127.0.0.1:80", conf.ServerAddress)
+		assert.Equal(15*time.Second, conf.ServerReadTimeout)
+		assert.Equal(15*time.Second, conf.ServerWriteTimeout)
+		assert.Equal(2*time.Minute, conf.ServerIdleTimeout)
+		assert.Equal(30*time.Second, conf.GracefulShutdownTimeout)
 	})
 
 	t.Run("Returns err when no file exists", func(t *testing.T) {
-		if _, err := config.Load("testdata/", "doesnotexist.env"); err == nil {
+		if _, err := config.Load("testdata/doesnotexist.env"); err == nil {
 			t.Fail() // should return err when file does not exist
 		}
 	})

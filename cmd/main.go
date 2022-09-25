@@ -19,14 +19,14 @@ import (
 func main() {
 	logger := log.NewLogfmtLogger(os.Stderr)
 
-	conf, err := config.Load(".", "app.env")
+	conf, err := config.Load("app.env")
 	if err != nil {
 		logger.Log("msg", "could not load config", "err", err)
 	}
 
 	var service todolist.Service
 	service = todolist.NewService(inmem.NewTodoStore())
-	service = todolist.NewLoggingService(logger, service)
+	service = todolist.LoggingMiddleware(logger)(service)
 
 	mux := http.NewServeMux()
 	mux.Handle("/todolist/v1/", todolist.MakeHandler(service, logger))
