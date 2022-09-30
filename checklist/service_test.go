@@ -18,9 +18,9 @@ func TestSave(t *testing.T) {
 		svc    = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	todo := todo.Task{Name: "Kachra phenk k ao", Done: false}
+	task := todo.Task{Name: "Kachra phenk k ao", Done: false}
 
-	assert.NoError(svc.Save(context.TODO(), &todo), "could not save todo")
+	assert.NoError(svc.Save(context.TODO(), &task), "could not save task")
 }
 
 func TestList(t *testing.T) {
@@ -37,16 +37,16 @@ func TestList(t *testing.T) {
 	}
 
 	for i := range expected {
-		require.NoError(svc.Save(context.TODO(), &expected[i]), "could not save todo")
+		require.NoError(svc.Save(context.TODO(), &expected[i]), "could not save task")
 	}
 
-	todolist, err := svc.List(context.TODO())
-	require.NoError(err, "could not list todos")
+	list, err := svc.List(context.TODO())
+	require.NoError(err, "could not list tasks")
 
-	for i := range todolist {
-		assert.Equal(expected[i].ID, todolist[i].ID, "IDs need to match")
-		assert.Equal(expected[i].Name, todolist[i].Name, "Names need to match")
-		assert.Equal(expected[i].Done, todolist[i].Done, "Done needs to match")
+	for i := range list {
+		assert.Equal(expected[i].ID, list[i].ID, "IDs need to match")
+		assert.Equal(expected[i].Name, list[i].Name, "Names need to match")
+		assert.Equal(expected[i].Done, list[i].Done, "Done needs to match")
 	}
 }
 
@@ -57,14 +57,14 @@ func TestToggleDone(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	todo := todo.Task{Name: "Kachra phenk k ao", Done: false}
-	require.NoError(svc.Save(context.TODO(), &todo), "could not save todo")
+	task := todo.Task{Name: "Kachra phenk k ao", Done: false}
+	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
 
-	require.NoError(svc.ToggleDone(context.TODO(), todo.ID), "could not toggle todo")
+	require.NoError(svc.ToggleDone(context.TODO(), task.ID), "could not toggle task")
 
-	todolist, err := svc.List(context.TODO())
-	assert.NoError(err, "could not list todos")
-	assert.True(todolist[0].Done, "expected todo to be done")
+	list, err := svc.List(context.TODO())
+	assert.NoError(err, "could not list tasks")
+	assert.True(list[0].Done, "expected task to be done")
 }
 
 func TestRemove(t *testing.T) {
@@ -74,14 +74,14 @@ func TestRemove(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	todo := todo.Task{Name: "Kachra phenk k ao", Done: true}
-	require.NoError(svc.Save(context.TODO(), &todo), "could not save todo")
+	task := todo.Task{Name: "Kachra phenk k ao", Done: true}
+	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
 
-	require.NoError(svc.Remove(context.TODO(), todo.ID), "could not remove todo")
+	require.NoError(svc.Remove(context.TODO(), task.ID), "could not remove task")
 
-	todolist, err := svc.List(context.TODO())
-	assert.NoError(err, "could not list todos")
-	assert.Empty(todolist, "expected list to be empty after removing todo")
+	list, err := svc.List(context.TODO())
+	assert.NoError(err, "could not list tasks")
+	assert.Empty(list, "expected list to be empty after removing task")
 }
 
 func NoTestUpdate(t *testing.T) {
@@ -91,17 +91,17 @@ func NoTestUpdate(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	todo := todo.Task{Name: "Internet ki complaint karo"}
-	require.NoError(svc.Save(context.TODO(), &todo), "could not save todo")
+	task := todo.Task{Name: "Internet ki complaint karo"}
+	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
 
-	todo.Name = "Bijli* ki complaint karo"
-	todo.Done = true
-	require.NoError(svc.Update(context.TODO(), &todo), "could not update todo")
+	task.Name = "Bijli* ki complaint karo"
+	task.Done = true
+	require.NoError(svc.Update(context.TODO(), &task), "could not update task")
 
-	todolist, err := svc.List(context.TODO())
-	assert.NoError(err, "could not list todos")
-	assert.Equal(1, len(todolist), "unexpected number of todos after update")
-	assert.Equal(todolist[0].ID, todo.ID, "expected IDs to match")
-	assert.Equal(todolist[0].Name, todo.Name, "expected Name to be updated")
-	assert.Equal(todolist[0].Done, todo.Done, "expected Done to be updated")
+	list, err := svc.List(context.TODO())
+	assert.NoError(err, "could not list tasks")
+	assert.Equal(1, len(list), "unexpected number of tasks after update")
+	assert.Equal(list[0].ID, task.ID, "expected IDs to match")
+	assert.Equal(list[0].Name, task.Name, "expected Name to be updated")
+	assert.Equal(list[0].Done, task.Done, "expected Done to be updated")
 }

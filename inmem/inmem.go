@@ -24,7 +24,7 @@ func (ts *taskRepository) Insert(_ context.Context, task *todo.Task) error {
 
 	if task.ID != 0 {
 		if ts.used[task.ID] {
-			return todo.ErrAlreadyExists
+			return todo.ErrTaskAlreadyExists
 		}
 
 		ts.used[task.ID] = true
@@ -58,7 +58,7 @@ func (ts *taskRepository) FindByID(_ context.Context, id int64) (*todo.Task, err
 			return &ts.tasklist[i], nil
 		}
 	}
-	return nil, todo.ErrNotFound
+	return nil, todo.ErrTaskNotFound
 }
 
 func (ts *taskRepository) Update(_ context.Context, task *todo.Task) error {
@@ -71,7 +71,7 @@ func (ts *taskRepository) Update(_ context.Context, task *todo.Task) error {
 			return nil
 		}
 	}
-	return todo.ErrNotFound
+	return todo.ErrTaskNotFound
 }
 
 func (ts *taskRepository) DeleteByID(_ context.Context, id int64) error {
@@ -84,5 +84,5 @@ func (ts *taskRepository) DeleteByID(_ context.Context, id int64) error {
 			return nil
 		}
 	}
-	return todo.ErrNotFound
+	return todo.ErrTaskNotFound
 }

@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("task not found")
-	ErrAlreadyExists = errors.New("task already exists")
+	ErrTaskNotFound      = errors.New("task not found")
+	ErrTaskAlreadyExists = errors.New("task already exists")
 )
 
 // Task represents a task that may need to be performed.

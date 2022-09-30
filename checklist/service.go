@@ -35,16 +35,16 @@ func (s *service) Save(ctx context.Context, task *todo.Task) error {
 }
 
 func (s *service) List(ctx context.Context) ([]todo.Task, error) {
-	todolist, err := s.repository.FindAll(ctx)
+	list, err := s.repository.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not list task: %v", err)
 	}
-	return todolist, nil
+	return list, nil
 }
 
 func (s *service) ToggleDone(ctx context.Context, id int64) error {
 	task, err := s.repository.FindByID(ctx, id)
-	if err == todo.ErrNotFound {
+	if err == todo.ErrTaskNotFound {
 		return err
 	}
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *service) ToggleDone(ctx context.Context, id int64) error {
 
 func (s *service) Remove(ctx context.Context, id int64) error {
 	err := s.repository.DeleteByID(ctx, id)
-	if err == todo.ErrNotFound {
+	if err == todo.ErrTaskNotFound {
 		return err
 	}
 	if err != nil {

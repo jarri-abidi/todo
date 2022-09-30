@@ -10,32 +10,32 @@ import (
 	"github.com/jarri-abidi/todo"
 )
 
-type saveTodoRequest struct {
+type saveTaskRequest struct {
 	Name string
 }
 
-type saveTodoResponse struct {
+type saveTaskResponse struct {
 	ID   int64  `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Done bool   `json:"done,omitempty"`
 	Err  error  `json:"error,omitempty"`
 }
 
-func (r saveTodoResponse) Failed() error { return r.Err }
+func (r saveTaskResponse) Failed() error { return r.Err }
 
-func makeSaveTodoEndpoint(s Service) endpoint.Endpoint {
+func makeSaveTaskEndpoint(s Service) endpoint.Endpoint {
 	ep := func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(saveTodoRequest)
+		req := request.(saveTaskRequest)
 		task := &todo.Task{Name: req.Name}
 		err := s.Save(ctx, task)
-		return saveTodoResponse{task.ID, task.Name, task.Done, err}, nil
+		return saveTaskResponse{task.ID, task.Name, task.Done, err}, nil
 	}
 
-	return otelkit.EndpointMiddleware(otelkit.WithOperation("saveTodo"))(ep)
+	return otelkit.EndpointMiddleware(otelkit.WithOperation("saveTask"))(ep)
 }
 
-type listTodosResponse struct {
-	Todos []struct {
+type listTasksResponse struct {
+	Tasks []struct {
 		ID   int64  `json:"id"`
 		Name string `json:"name"`
 		Done bool   `json:"done"`
@@ -43,19 +43,19 @@ type listTodosResponse struct {
 	Err error `json:"error,omitempty"`
 }
 
-func (r listTodosResponse) MarshalJSON() ([]byte, error) {
+func (r listTasksResponse) MarshalJSON() ([]byte, error) {
 	if r.Failed() == nil {
-		return json.Marshal(r.Todos)
+		return json.Marshal(r.Tasks)
 	}
 	return json.Marshal(r)
 }
 
-func (r listTodosResponse) Failed() error { return r.Err }
+func (r listTasksResponse) Failed() error { return r.Err }
 
-func makeListTodosEndpoint(s Service) endpoint.Endpoint {
+func makeListTasksEndpoint(s Service) endpoint.Endpoint {
 	ep := func(ctx context.Context, _ interface{}) (interface{}, error) {
 		tasks, err := s.List(ctx)
-		var resp = listTodosResponse{Todos: make([]struct {
+		var resp = listTasksResponse{Tasks: make([]struct {
 			ID   int64  `json:"id"`
 			Name string `json:"name"`
 			Done bool   `json:"done"`
@@ -64,7 +64,7 @@ func makeListTodosEndpoint(s Service) endpoint.Endpoint {
 			return resp, nil
 		}
 		for _, task := range tasks {
-			resp.Todos = append(resp.Todos, struct {
+			resp.Tasks = append(resp.Tasks, struct {
 				ID   int64  `json:"id"`
 				Name string `json:"name"`
 				Done bool   `json:"done"`
@@ -73,33 +73,33 @@ func makeListTodosEndpoint(s Service) endpoint.Endpoint {
 		return resp, nil
 	}
 
-	return otelkit.EndpointMiddleware(otelkit.WithOperation("listTodos"))(ep)
+	return otelkit.EndpointMiddleware(otelkit.WithOperation("listTasks"))(ep)
 }
 
-type removeTodoRequest struct {
+type removeTaskRequest struct {
 	id int64
 }
 
-func makeRemoveTodoEndpoint(s Service) endpoint.Endpoint {
+func makeRemoveTaskEndpoint(s Service) endpoint.Endpoint {
 	ep := func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(removeTodoRequest)
+		req := request.(removeTaskRequest)
 		err := s.Remove(ctx, req.id)
 		return nil, err
 	}
 
-	return otelkit.EndpointMiddleware(otelkit.WithOperation("removeTodo"))(ep)
+	return otelkit.EndpointMiddleware(otelkit.WithOperation("removeTask"))(ep)
 }
 
-type toggleTodoRequest struct {
+type toggleTaskRequest struct {
 	id int64
 }
 
-func makeToggleTodoEndpoint(s Service) endpoint.Endpoint {
+func makeToggleTaskEndpoint(s Service) endpoint.Endpoint {
 	ep := func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(toggleTodoRequest)
+		req := request.(toggleTaskRequest)
 		err := s.ToggleDone(ctx, req.id)
 		return nil, err
 	}
 
-	return otelkit.EndpointMiddleware(otelkit.WithOperation("toggleTodo"))(ep)
+	return otelkit.EndpointMiddleware(otelkit.WithOperation("toggleTask"))(ep)
 }
