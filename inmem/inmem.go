@@ -4,86 +4,85 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jarri-abidi/todolist/todos"
+	"github.com/jarri-abidi/todo"
 )
 
-type todoStore struct {
+type taskRepository struct {
 	sync.RWMutex
-	todolist []todos.Todo
+	tasklist []todo.Task
 	used     map[int64]bool
 	counter  int64
 }
 
-func NewTodoStore() todos.Store {
-	return &todoStore{todolist: []todos.Todo{}, used: make(map[int64]bool)}
+func NewTaskRepository() todo.TaskRepository {
+	return &taskRepository{tasklist: []todo.Task{}, used: make(map[int64]bool)}
 }
 
-func (ts *todoStore) Insert(_ context.Context, todo *todos.Todo) error {
+func (ts *taskRepository) Insert(_ context.Context, task *todo.Task) error {
 	ts.Lock()
 	defer ts.Unlock()
 
-	if todo.ID != 0 {
-		if ts.used[todo.ID] {
-			return todos.ErrAlreadyExists
+	if task.ID != 0 {
+		if ts.used[task.ID] {
+			return todo.ErrAlreadyExists
 		}
 
-		ts.used[todo.ID] = true
-	} else {
-		ts.counter++
-		for ts.used[ts.counter] {
-			ts.counter++
-		}
-
-		ts.used[todo.ID] = true
-		todo.ID = ts.counter
+		ts.used[task.ID] = true
+		ts.tasklist = append(ts.tasklist, *task)
+		return nil
 	}
 
-	ts.todolist = append(ts.todolist, *todo)
-
+	ts.counter++
+	for ts.used[ts.counter] {
+		ts.counter++
+	}
+	ts.used[task.ID] = true
+	task.ID = ts.counter
+	ts.tasklist = append(ts.tasklist, *task)
 	return nil
 }
 
-func (ts *todoStore) FindAll(_ context.Context) ([]todos.Todo, error) {
+func (ts *taskRepository) FindAll(_ context.Context) ([]todo.Task, error) {
 	ts.RLock()
 	defer ts.RUnlock()
 
-	return ts.todolist, nil
+	return ts.tasklist, nil
 }
 
-func (ts *todoStore) FindByID(_ context.Context, id int64) (*todos.Todo, error) {
+func (ts *taskRepository) FindByID(_ context.Context, id int64) (*todo.Task, error) {
 	ts.RLock()
 	defer ts.RUnlock()
 
-	for i, todo := range ts.todolist {
-		if todo.ID == id {
-			return &ts.todolist[i], nil
+	for i, task := range ts.tasklist {
+		if task.ID == id {
+			return &ts.tasklist[i], nil
 		}
 	}
-	return nil, todos.ErrNotFound
+	return nil, todo.ErrNotFound
 }
 
-func (ts *todoStore) Update(_ context.Context, todo *todos.Todo) error {
+func (ts *taskRepository) Update(_ context.Context, task *todo.Task) error {
 	ts.Lock()
 	defer ts.Unlock()
 
-	for i, t := range ts.todolist {
-		if t.ID == todo.ID {
-			ts.todolist[i] = *todo
+	for i, t := range ts.tasklist {
+		if t.ID == task.ID {
+			ts.tasklist[i] = *task
 			return nil
 		}
 	}
-	return todos.ErrNotFound
+	return todo.ErrNotFound
 }
 
-func (ts *todoStore) DeleteByID(_ context.Context, id int64) error {
+func (ts *taskRepository) DeleteByID(_ context.Context, id int64) error {
 	ts.Lock()
 	defer ts.Unlock()
 
-	for i, todo := range ts.todolist {
-		if todo.ID == id {
-			ts.todolist = append(ts.todolist[:i], ts.todolist[i+1:]...)
+	for i, task := range ts.tasklist {
+		if task.ID == id {
+			ts.tasklist = append(ts.tasklist[:i], ts.tasklist[i+1:]...)
 			return nil
 		}
 	}
-	return todos.ErrNotFound
+	return todo.ErrNotFound
 }

@@ -10,26 +10,49 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	"github.com/jarri-abidi/todolist/config"
-	"github.com/jarri-abidi/todolist/inmem"
-	"github.com/jarri-abidi/todolist/todolist"
+	"github.com/jarri-abidi/todo/checklist"
+	"github.com/jarri-abidi/todo/config"
+	"github.com/jarri-abidi/todo/inmem"
 )
 
 func main() {
 	logger := log.NewLogfmtLogger(os.Stderr)
 
+	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
+	if err != nil {
+		logger.Log("msg", "could not init jaeger exporter", "err", err)
+		os.Exit(1)
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			logger.Log("msg", "could not shutdown tracer provider", "err", err)
+		}
+	}()
+
 	conf, err := config.Load("app.env")
 	if err != nil {
 		logger.Log("msg", "could not load config", "err", err)
+		os.Exit(1)
 	}
 
-	var service todolist.Service
-	service = todolist.NewService(inmem.NewTodoStore())
-	service = todolist.LoggingMiddleware(logger)(service)
+	var service checklist.Service
+	service = checklist.NewService(inmem.NewTaskRepository())
+	service = checklist.LoggingMiddleware(logger)(service)
 
 	mux := http.NewServeMux()
-	mux.Handle("/todolist/v1/", todolist.MakeHandler(service, logger))
+	mux.Handle("/todolist/v1/", checklist.MakeHandler(service, logger))
 	mux.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
@@ -41,11 +64,11 @@ func main() {
 	}
 
 	fmt.Println(`
-	 _____          _           __ _      _  
-   	/__   \___   __| | ___     / /(_) ___| |_ 
-	  / /\/ _ \ / _  |/ _ \   / / | |/ __| __|
-	 / / | (_) | (_| | (_) | / /__| |\__ \ |_ 
-	 \/   \___/ \__,_|\___/  \____/_|\___/\__|
+	 _____          _       
+   	/__   \___   __| | ___  
+	  / /\/ _ \ / _  |/ _ \ 
+	 / / | (_) | (_| | (_) |
+	 \/   \___/ \__,_|\___/ 
 	`)
 
 	quit := make(chan os.Signal)

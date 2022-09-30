@@ -1,8 +1,7 @@
-package todolist_test
+package checklist_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jarri-abidi/todolist/inmem"
-	"github.com/jarri-abidi/todolist/todolist"
-	"github.com/jarri-abidi/todolist/todos"
+	"github.com/jarri-abidi/todo"
+	todolist "github.com/jarri-abidi/todo/checklist"
+	"github.com/jarri-abidi/todo/inmem"
 )
 
 func TestToggleTodo(t *testing.T) {
@@ -36,7 +35,7 @@ func TestToggleTodo(t *testing.T) {
 		},
 		{
 			"Returns 404 and error msg for id of todo that doesn't exist",
-			"1337", http.StatusNotFound, `{"error":"todo not found"}`, false,
+			"1337", http.StatusNotFound, `{"error":"task not found"}`, false,
 		},
 	}
 
@@ -45,11 +44,11 @@ func TestToggleTodo(t *testing.T) {
 			var (
 				require = require.New(t)
 				assert  = assert.New(t)
-				svc     = todolist.NewService(inmem.NewTodoStore())
+				svc     = todolist.NewService(inmem.NewTaskRepository())
 				handler = todolist.MakeHandler(svc, log.NewNopLogger())
 			)
 
-			todo := todos.Todo{Name: "Gaari ki service karwalo"}
+			todo := todo.Task{Name: "Gaari ki service karwalo"}
 			require.NoError(svc.Save(context.TODO(), &todo), "could not save todo")
 
 			rec := httptest.NewRecorder()
@@ -73,26 +72,36 @@ func TestToggleTodo(t *testing.T) {
 
 func TestListTodos(t *testing.T) {
 	tt := []struct {
-		Name         string
-		TodosInStore []todos.Todo
+		Name        string
+		TodosInRepo []todo.Task
+		Expected    string
 	}{
 		{
 			"Returns 200 and empty list if no todos exist",
-			[]todos.Todo{},
+			[]todo.Task{},
+			`[]`,
 		},
 		{
 			"Returns 200 and 3 todos if 3 todos exist",
-			[]todos.Todo{
+			[]todo.Task{
 				{ID: 1, Name: "Kachra phenk k ao", Done: false},
 				{ID: 2, Name: "Gaari ki service karalo", Done: false},
 				{ID: 3, Name: "Roti le ao", Done: false},
 			},
+			`[
+				{"id": 1, "name": "Kachra phenk k ao", "done": false},
+				{"id": 2, "name": "Gaari ki service karalo", "done": false},
+				{"id": 3, "name": "Roti le ao", "done": false}
+			]`,
 		},
 		{
 			"Returns 200 and 1 todo if 1 todo exists",
-			[]todos.Todo{
+			[]todo.Task{
 				{ID: 1, Name: "Kachra phenk k ao", Done: false},
 			},
+			`[
+				{"id": 1, "name": "Kachra phenk k ao", "done": false}
+			]`,
 		},
 	}
 
@@ -101,12 +110,12 @@ func TestListTodos(t *testing.T) {
 			var (
 				require = require.New(t)
 				assert  = assert.New(t)
-				svc     = todolist.NewService(inmem.NewTodoStore())
+				svc     = todolist.NewService(inmem.NewTaskRepository())
 				handler = todolist.MakeHandler(svc, log.NewNopLogger())
 			)
 
-			for i := range tc.TodosInStore {
-				require.NoError(svc.Save(context.TODO(), &tc.TodosInStore[i]), "could not save todo")
+			for i := range tc.TodosInRepo {
+				require.NoError(svc.Save(context.TODO(), &tc.TodosInRepo[i]), "could not save todo")
 			}
 
 			rec := httptest.NewRecorder()
@@ -116,9 +125,7 @@ func TestListTodos(t *testing.T) {
 			handler.ServeHTTP(rec, req)
 
 			assert.Equal(http.StatusOK, rec.Result().StatusCode, "unexpected http status code")
-			expected, err := json.Marshal(map[string]interface{}{"todos": tc.TodosInStore})
-			require.NoError(err)
-			assert.JSONEq(string(expected), rec.Body.String(), "unexpected http response body")
+			assert.JSONEq(tc.Expected, rec.Body.String(), "unexpected http response body")
 		})
 	}
 }
@@ -170,11 +177,11 @@ func NoTestReplaceTodo(t *testing.T) {
 			var (
 				require = require.New(t)
 				assert  = assert.New(t)
-				svc     = todolist.NewService(inmem.NewTodoStore())
+				svc     = todolist.NewService(inmem.NewTaskRepository())
 				handler = todolist.MakeHandler(svc, log.NewNopLogger())
 			)
 
-			savedTodo := todos.Todo{Name: "Gaari ki service karwalo"}
+			savedTodo := todo.Task{Name: "Gaari ki service karwalo"}
 			require.NoError(svc.Save(context.TODO(), &savedTodo), "could not save todo")
 
 			rec := httptest.NewRecorder()
