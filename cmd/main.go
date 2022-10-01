@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,7 +18,7 @@ import (
 
 	"github.com/jarri-abidi/todo/checklist"
 	"github.com/jarri-abidi/todo/config"
-	"github.com/jarri-abidi/todo/postgres"
+	"github.com/jarri-abidi/todo/inmem"
 )
 
 func main() {
@@ -31,16 +30,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	var db *sql.DB
-	{
-		ctx, cancel := context.WithTimeout(context.Background(), conf.DBConnectTimeout)
-		defer cancel()
-		db, err = postgres.NewDB(ctx, conf.DBSource)
-		if err != nil {
-			logger.Log("msg", "could not connect to postgres", "err", err)
-			os.Exit(1)
-		}
-	}
+	// var db *sql.DB
+	// {
+	// 	ctx, cancel := context.WithTimeout(context.Background(), conf.DBConnectTimeout)
+	// 	defer cancel()
+	// 	db, err = postgres.NewDB(ctx, conf.DBSource)
+	// 	if err != nil {
+	// 		logger.Log("msg", "could not connect to postgres", "err", err)
+	// 		os.Exit(1)
+	// 	}
+	// }
 
 	var exporter trace.SpanExporter
 	{
@@ -58,14 +57,11 @@ func main() {
 			trace.WithBatcher(exporter),
 		)
 		otel.SetTracerProvider(tp)
-		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-			propagation.TraceContext{},
-			propagation.Baggage{},
-			b3.New(),
-		))
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(b3.New()))
 	}
 
-	tasks := postgres.NewTaskRepository(db)
+	// tasks := postgres.NewTaskRepository(db)
+	tasks := inmem.NewTaskRepository()
 
 	var service checklist.Service
 	service = checklist.NewService(tasks)
@@ -108,9 +104,9 @@ func main() {
 		logger.Log("msg", "could not shutdown http server", "err", err)
 	}
 
-	if err := db.Close(); err != nil {
-		logger.Log("msg", "could not close db connection", "err", err)
-	}
+	// if err := db.Close(); err != nil {
+	// 	logger.Log("msg", "could not close db connection", "err", err)
+	// }
 
 	if err := tp.Shutdown(context.Background()); err != nil {
 		logger.Log("msg", "could not shutdown tracer provider", "err", err)
