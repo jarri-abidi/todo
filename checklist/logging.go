@@ -1,4 +1,4 @@
-package todolist
+package checklist
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/log"
 
-	"github.com/jarri-abidi/todolist/todos"
+	"github.com/jarri-abidi/todo"
 )
 
 // LoggingMiddleware takes a logger as a dependency and returns a service Middleware.
@@ -19,19 +19,19 @@ type loggingMiddleware struct {
 	Service
 }
 
-func (s *loggingMiddleware) Save(ctx context.Context, todo *todos.Todo) (err error) {
+func (s *loggingMiddleware) Save(ctx context.Context, task *todo.Task) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "save",
-			"name", todo.Name,
+			"name", task.Name,
 			"took", time.Since(begin),
 			"err", err,
 		)
 	}(time.Now())
-	return s.Service.Save(ctx, todo)
+	return s.Service.Save(ctx, task)
 }
 
-func (s *loggingMiddleware) List(ctx context.Context) (todos []todos.Todo, err error) {
+func (s *loggingMiddleware) List(ctx context.Context) (tasks []todo.Task, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "list",

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jarri-abidi/todolist/config"
+	"github.com/jarri-abidi/todo/config"
 )
 
 func TestLoad(t *testing.T) {

@@ -1,4 +1,4 @@
-package todolist
+package checklist
 
 import (
 	"context"
@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/go-kit/log"
 	"github.com/gorilla/mux"
+	"github.com/jarri-abidi/todo"
 	"github.com/pkg/errors"
-
-	"github.com/jarri-abidi/todolist/todos"
 )
 
-var ErrNonNumericTodoID = errors.New("todo id in path must be numeric")
+var ErrNonNumericTaskID = errors.New("task id in path must be numeric")
 var ErrResourceNotFound = errors.New("resource not found")
 var ErrMethodNotAllowed = errors.New("method not allowed")
 
@@ -30,40 +30,40 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	saveTodoHandler := kithttp.NewServer(
-		makeSaveTodoEndpoint(s),
-		decodeSaveTodoRequest,
+	saveTaskHandler := kithttp.NewServer(
+		makeSaveTaskEndpoint(s),
+		decodeSaveTaskRequest,
 		encodeResponse,
 		opts...,
 	)
 
-	listTodosHandler := kithttp.NewServer(
-		makeListTodosEndpoint(s),
+	listTasksHandler := kithttp.NewServer(
+		makeListTasksEndpoint(s),
 		kithttp.NopRequestDecoder,
 		encodeResponse,
 		opts...,
 	)
 
-	removeTodoHandler := kithttp.NewServer(
-		makeRemoveTodoEndpoint(s),
-		decodeRemoveTodoRequest,
+	removeTaskHandler := kithttp.NewServer(
+		makeRemoveTaskEndpoint(s),
+		decodeRemoveTaskRequest,
 		encodeResponse,
 		opts...,
 	)
 
-	toggleTodoHandler := kithttp.NewServer(
-		makeToggleTodoEndpoint(s),
-		decodeToggleTodoRequest,
+	toggleTaskHandler := kithttp.NewServer(
+		makeToggleTaskEndpoint(s),
+		decodeToggleTaskRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	r := mux.NewRouter()
 
-	r.Handle("/todolist/v1/todos", saveTodoHandler).Methods("POST")
-	r.Handle("/todolist/v1/todos", listTodosHandler).Methods("GET")
-	r.Handle("/todolist/v1/todo/{id:[0-9]+}", removeTodoHandler).Methods("DELETE")
-	r.Handle("/todolist/v1/todo/{id:[0-9]+}", toggleTodoHandler).Methods("PATCH")
+	r.Handle("/checklist/v1/tasks", saveTaskHandler).Methods("POST")
+	r.Handle("/checklist/v1/tasks", listTasksHandler).Methods("GET")
+	r.Handle("/checklist/v1/task/{id:[0-9]+}", removeTaskHandler).Methods("DELETE")
+	r.Handle("/checklist/v1/task/{id:[0-9]+}", toggleTaskHandler).Methods("PATCH")
 
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowed)
 	r.NotFoundHandler = http.HandlerFunc(notFound)
@@ -71,35 +71,35 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 	return r
 }
 
-func decodeSaveTodoRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeSaveTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
 		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, ErrInvalidRequestBody{err}
 	}
-	return saveTodoRequest{Name: body.Name}, nil
+	return saveTaskRequest{Name: body.Name}, nil
 }
 
-func decodeRemoveTodoRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeRemoveTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		return nil, ErrNonNumericTodoID
+		return nil, ErrNonNumericTaskID
 	}
-	return removeTodoRequest{id}, nil
+	return removeTaskRequest{id}, nil
 }
 
-func decodeToggleTodoRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeToggleTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		return nil, ErrNonNumericTodoID
+		return nil, ErrNonNumericTaskID
 	}
-	return toggleTodoRequest{id}, nil
+	return toggleTaskRequest{id}, nil
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
+	if e, ok := response.(endpoint.Failer); ok && e.Failed() != nil {
+		encodeError(ctx, e.Failed(), w)
 		return nil
 	}
 
@@ -112,20 +112,16 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 	return json.NewEncoder(w).Encode(response)
 }
 
-type errorer interface {
-	error() error
-}
-
 // encode errors from business-logic
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	switch err {
-	case ErrResourceNotFound, todos.ErrNotFound:
+	case ErrResourceNotFound, todo.ErrTaskNotFound:
 		w.WriteHeader(http.StatusNotFound)
-	case todos.ErrAlreadyExists:
+	case todo.ErrTaskAlreadyExists:
 		w.WriteHeader(http.StatusConflict)
-	case ErrNonNumericTodoID:
+	case ErrNonNumericTaskID:
 		w.WriteHeader(http.StatusBadRequest)
 	case ErrMethodNotAllowed:
 		w.WriteHeader(http.StatusMethodNotAllowed)
