@@ -17,11 +17,23 @@ import (
 
 	"github.com/jarri-abidi/todo/checklist"
 	"github.com/jarri-abidi/todo/config"
-	"github.com/jarri-abidi/todo/inmem"
+	"github.com/jarri-abidi/todo/postgres"
 )
 
 func main() {
 	logger := log.NewLogfmtLogger(os.Stderr)
+
+	conf, err := config.Load("app.env")
+	if err != nil {
+		logger.Log("msg", "could not load config", "err", err)
+		os.Exit(1)
+	}
+
+	db, err := postgres.New(context.TODO(), conf.DBSource)
+	if err != nil {
+		logger.Log("msg", "could not connect to postgres", "err", err)
+		os.Exit(1)
+	}
 
 	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
 	if err != nil {
@@ -41,14 +53,10 @@ func main() {
 		}
 	}()
 
-	conf, err := config.Load("app.env")
-	if err != nil {
-		logger.Log("msg", "could not load config", "err", err)
-		os.Exit(1)
-	}
+	tasks := postgres.NewTaskRepository(db)
 
 	var service checklist.Service
-	service = checklist.NewService(inmem.NewTaskRepository())
+	service = checklist.NewService(tasks)
 	service = checklist.LoggingMiddleware(logger)(service)
 
 	mux := http.NewServeMux()

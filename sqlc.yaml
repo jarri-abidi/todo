@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "postgres/queries/"
+    schema: "postgres/schema/schema.sql"
+    gen:
+      go:
+        package: "gen"
+        out: "postgres/gen"
+        emit_empty_slices: true

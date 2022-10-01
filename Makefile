@@ -10,3 +10,6 @@ test:
 
 run: build
 	./app
+
+clean:
+	rm -r postgres/gen/**
