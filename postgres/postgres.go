@@ -15,5 +15,5 @@ func NewDB(ctx context.Context, dataSourceName string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return db, err
+	return db, nil
 }
