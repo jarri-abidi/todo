@@ -34,12 +34,14 @@ func main() {
 		logger.Log("msg", "could not connect to postgres", "err", err)
 		os.Exit(1)
 	}
+	defer db.Close()
 
 	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
 	if err != nil {
 		logger.Log("msg", "could not init jaeger exporter", "err", err)
 		os.Exit(1)
 	}
+	defer exporter.Shutdown(context.Background())
 
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
@@ -47,11 +49,7 @@ func main() {
 	)
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			logger.Log("msg", "could not shutdown tracer provider", "err", err)
-		}
-	}()
+	defer tp.Shutdown(context.Background())
 
 	tasks := postgres.NewTaskRepository(db)
 
