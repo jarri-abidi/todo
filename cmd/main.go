@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/jarri-abidi/todo/checklist"
 	"github.com/jarri-abidi/todo/config"
@@ -43,10 +43,7 @@ func main() {
 	}
 	defer exporter.Shutdown(context.Background())
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithBatcher(exporter),
-	)
+	tp := trace.NewTracerProvider(trace.WithSampler(trace.AlwaysSample()), trace.WithBatcher(exporter))
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	defer tp.Shutdown(context.Background())
