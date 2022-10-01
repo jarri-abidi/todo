@@ -5,7 +5,7 @@ import (
 	"database/sql"
 )
 
-func New(ctx context.Context, dataSourceName string) (*sql.DB, error) {
+func NewDB(ctx context.Context, dataSourceName string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		return nil, err

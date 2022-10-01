@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := postgres.New(context.TODO(), conf.DBSource)
+	db, err := postgres.NewDB(context.TODO(), conf.DBSource)
 	if err != nil {
 		logger.Log("msg", "could not connect to postgres", "err", err)
 		os.Exit(1)
