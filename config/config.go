@@ -17,6 +17,7 @@ type Config struct {
 	ServerIdleTimeout       time.Duration `envconfig:"SERVER_IDLE_TIMEOUT"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	DBSource                string        `envconfig:"DB_SOURCE"`
+	DBConnectTimeout        time.Duration `envconfig:"DB_CONNECT_TIMEOUT"`
 }
 
 // Load returns configuration from file or environment variables.
