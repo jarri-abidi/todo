@@ -91,15 +91,17 @@ func main() {
 	 \/   \___/ \__,_|\___/ 
 	`)
 
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+
 	go func() {
 		logger.Log("transport", "http", "address", conf.ServerAddress, "msg", "listening")
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			logger.Log("transport", "http", "address", conf.ServerAddress, "msg", "failed", "err", err)
+			sig <- os.Interrupt // trigger shutdown of other resources
 		}
 	}()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
 	logger.Log("received", <-sig, "msg", "terminating")
 
 	if err := server.Shutdown(context.Background()); err != nil {
