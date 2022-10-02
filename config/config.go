@@ -11,13 +11,14 @@ import (
 // Config stores all configurations of the application.
 // The values are read from a file or environment variables.
 type Config struct {
-	ServerAddress           string        `envconfig:"SERVER_ADDRESS"`
-	ServerWriteTimeout      time.Duration `envconfig:"SERVER_WRITE_TIMEOUT"`
-	ServerReadTimeout       time.Duration `envconfig:"SERVER_READ_TIMEOUT"`
-	ServerIdleTimeout       time.Duration `envconfig:"SERVER_IDLE_TIMEOUT"`
-	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
-	DBSource                string        `envconfig:"DB_SOURCE"`
-	DBConnectTimeout        time.Duration `envconfig:"DB_CONNECT_TIMEOUT"`
+	ServerAddress              string        `envconfig:"SERVER_ADDRESS"`
+	ServerWriteTimeout         time.Duration `envconfig:"SERVER_WRITE_TIMEOUT"`
+	ServerReadTimeout          time.Duration `envconfig:"SERVER_READ_TIMEOUT"`
+	ServerIdleTimeout          time.Duration `envconfig:"SERVER_IDLE_TIMEOUT"`
+	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
+	DBSource                   string        `envconfig:"DB_SOURCE"`
+	DBConnectTimeout           time.Duration `envconfig:"DB_CONNECT_TIMEOUT"`
+	OTELExporterJaegerEndpoint string        `envconfig:"OTEL_EXPORTER_JAEGER_ENDPOINT"`
 }
 
 // Load returns configuration from file or environment variables.
