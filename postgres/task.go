@@ -17,8 +17,12 @@ func NewTaskRepository(db *sql.DB) todo.TaskRepository {
 }
 
 func (r *taskRepository) Insert(ctx context.Context, task *todo.Task) error {
-	_, err := r.queries.InsertTask(ctx, task.Name)
-	return err
+	inserted, err := r.queries.InsertTask(ctx, task.Name)
+	if err != nil {
+		return err
+	}
+	task.ID = inserted.ID
+	return nil
 }
 
 func (r *taskRepository) FindAll(ctx context.Context) ([]todo.Task, error) {
