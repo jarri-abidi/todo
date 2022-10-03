@@ -101,7 +101,7 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 		return nil
 	}
 
-	if response == nil {
+	if _, ok := response.(emptyResponse); ok || response == nil {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
