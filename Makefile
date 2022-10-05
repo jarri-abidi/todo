@@ -2,7 +2,10 @@
 
 default: build
 
-build:
+gen:
+	sqlc generate
+
+build: gen
 	go build -o app cmd/main.go
 
 test:
@@ -12,4 +15,5 @@ run: build
 	./app
 
 clean:
+	rm app
 	rm -r postgres/gen/**
