@@ -24,7 +24,7 @@ func makeSaveTaskEndpoint(s Service) endpoint.Endpoint {
 func makeListTasksEndpoint(s Service) endpoint.Endpoint {
 	ep := func(ctx context.Context, _ interface{}) (interface{}, error) {
 		tasks, err := s.List(ctx)
-		var resp = listTasksResponse{Tasks: make([]taskResponse, 0), Err: err}
+		var resp = listTasksResponse{Tasks: make([]taskResponse, 0, len(tasks)), Err: err}
 		if err != nil {
 			return resp, nil
 		}
