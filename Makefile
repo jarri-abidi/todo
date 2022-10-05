@@ -15,5 +15,4 @@ run: build
 	./app
 
 clean:
-	rm app
-	rm -r postgres/gen/**
+	rm app && rm -r postgres/gen/**
