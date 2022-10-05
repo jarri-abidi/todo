@@ -72,13 +72,11 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 }
 
 func decodeSaveTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		Name string `json:"name"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	var request saveTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, ErrInvalidRequestBody{err}
 	}
-	return saveTaskRequest{Name: body.Name}, nil
+	return request, nil
 }
 
 func decodeRemoveTaskRequest(_ context.Context, r *http.Request) (interface{}, error) {
@@ -103,7 +101,7 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 		return nil
 	}
 
-	if response == nil {
+	if _, ok := response.(emptyResponse); ok || response == nil {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}

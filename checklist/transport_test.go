@@ -58,8 +58,8 @@ func TestToggleTask(t *testing.T) {
 
 			handler.ServeHTTP(rec, req)
 
+			assert.Equal(tc.ExpectedCode, rec.Result().StatusCode, "unexpected http status code")
 			if tc.ExpectedCode != http.StatusNoContent {
-				assert.Equal(tc.ExpectedCode, rec.Result().StatusCode, "unexpected http status code")
 				assert.JSONEq(tc.ExpectedRspBody, rec.Body.String(), " unexpected http response body")
 			}
 

@@ -2,44 +2,31 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/go-kit/log"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/jarri-abidi/todo/checklist"
 	"github.com/jarri-abidi/todo/config"
-	"github.com/jarri-abidi/todo/inmem"
+	"github.com/jarri-abidi/todo/postgres"
 )
 
 func main() {
-	logger := log.NewLogfmtLogger(os.Stderr)
-
-	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
-	if err != nil {
-		logger.Log("msg", "could not init jaeger exporter", "err", err)
-		os.Exit(1)
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithBatcher(exporter),
-	)
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			logger.Log("msg", "could not shutdown tracer provider", "err", err)
-		}
-	}()
+	logger := log.NewJSONLogger(os.Stderr)
 
 	conf, err := config.Load("app.env")
 	if err != nil {
@@ -47,8 +34,41 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), conf.DBConnectTimeout)
+	defer cancel()
+	db, err := postgres.NewDB(ctx, conf.DBSource)
+	if err != nil {
+		logger.Log("msg", "could not connect to postgres", "err", err)
+		os.Exit(1)
+	}
+
+	if err = postgres.Migrate("file://postgres/migrations", db); err != nil {
+		logger.Log("msg", "could not run postgres schema migrations", "err", err)
+		os.Exit(1)
+	}
+
+	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
+	if err != nil {
+		logger.Log("msg", "could not create jaeger exporter", "err", err)
+		os.Exit(1)
+	}
+
+	tp := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithBatcher(exporter),
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("todo"),
+			attribute.String("environment", "dev"),
+		)),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(b3.New()))
+
+	tasks := postgres.NewTaskRepository(db)
+
 	var service checklist.Service
-	service = checklist.NewService(inmem.NewTaskRepository())
+	service = checklist.NewService(tasks)
 	service = checklist.LoggingMiddleware(logger)(service)
 
 	mux := http.NewServeMux()
@@ -63,23 +83,34 @@ func main() {
 		Handler:      mux,
 	}
 
-	fmt.Println(`
-	 _____          _       
-   	/__   \___   __| | ___  
-	  / /\/ _ \ / _  |/ _ \ 
-	 / / | (_) | (_| | (_) |
-	 \/   \___/ \__,_|\___/ 
-	`)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
 
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT)
 	go func() {
-		<-quit
-		if err := server.Shutdown(context.Background()); err != nil {
-			logger.Log("terminated", err)
+		logger.Log("transport", "http", "address", conf.ServerAddress, "msg", "listening")
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			logger.Log("transport", "http", "address", conf.ServerAddress, "msg", "failed", "err", err)
+			sig <- os.Interrupt // trigger shutdown of other resources
 		}
 	}()
 
-	logger.Log("transport", "http", "address", conf.ServerAddress, "msg", "listening")
-	logger.Log("terminated", server.ListenAndServe())
+	logger.Log("received", <-sig, "msg", "terminating")
+
+	if err = server.Shutdown(context.Background()); err != nil {
+		logger.Log("msg", "could not shutdown http server", "err", err)
+	}
+
+	if err = db.Close(); err != nil {
+		logger.Log("msg", "could not close db connection", "err", err)
+	}
+
+	if err = tp.Shutdown(context.Background()); err != nil {
+		logger.Log("msg", "could not shutdown tracer provider", "err", err)
+	}
+
+	if err = exporter.Shutdown(context.Background()); err != nil {
+		logger.Log("msg", "could not shutdown traces exporter", "err", err)
+	}
+
+	logger.Log("msg", "terminated")
 }
