@@ -11,20 +11,3 @@ docker-compose build && docker-compose up -d
 ### Stop
 ```
 docker-compose down
-```
-
-## How to contribute?
-Want to contribute? Awesome! The most basic way to show your support is to star the project or to raise issues. Pull requests are highly welcome.
-
-Please make sure to update tests as appropriate.
-
-## Maintainers
-[Jarri Abidi](https://github.com/jarri-abidi)\
-[Faisal Nisar](https://github.com/markhaur)
-
-## Credits
-This project exists, thanks to all the people who contribute.
-
-<a href="https://github.com/jarri-abidi/todo/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=jarri-abidi/todo" />
-</a>
