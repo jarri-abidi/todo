@@ -17,7 +17,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      - DB_SOURCE=postgresql://root:secret@postgres:5432/todo?sslmode=disable
+      - CONFIG_PATH=docker.env
     depends_on:
       - postgres
     entrypoint:
