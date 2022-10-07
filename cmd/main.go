@@ -32,7 +32,7 @@ func main() {
 	logger := log.NewJSONLogger(os.Stderr)
 	defer logger.Log("msg", "terminated")
 
-	path, found := os.LookupEnv("CONFIG_PATH")
+	path, found := os.LookupEnv("TODOAPP_CONFIG_PATH")
 	if found {
 		if err := godotenv.Load(path); err != nil {
 			logger.Log("msg", "could not load .env file", "path", path, "err", err)
@@ -49,7 +49,7 @@ func main() {
 		DBConnectTimeout           time.Duration `envconfig:"DB_CONNECT_TIMEOUT"`
 		OTELExporterJaegerEndpoint string        `envconfig:"OTEL_EXPORTER_JAEGER_ENDPOINT"`
 	}
-	if err := envconfig.Process("", &config); err != nil {
+	if err := envconfig.Process("TODOAPP", &config); err != nil {
 		logger.Log("msg", "could not load env vars", "err", err)
 		os.Exit(1)
 	}
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	if config.OTELExporterJaegerEndpoint != "" {
-		exporter, err := jaeger.New(jaeger.WithCollectorEndpoint())
+		exporter, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(config.OTELExporterJaegerEndpoint)))
 		if err != nil {
 			logger.Log("msg", "could not create jaeger exporter", "err", err)
 			os.Exit(1)

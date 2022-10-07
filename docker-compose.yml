@@ -17,7 +17,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      - CONFIG_PATH=docker.env
+      - TODOAPP_CONFIG_PATH=docker.env
     depends_on:
       - postgres
     entrypoint:
