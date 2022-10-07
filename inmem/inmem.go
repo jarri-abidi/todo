@@ -14,6 +14,8 @@ type taskRepository struct {
 	counter  int64
 }
 
+// NewTaskRepository returns an in-memory implementation of todo.TaskRepository.
+// This lets us run tests and start the app locally without a persistent database.
 func NewTaskRepository() todo.TaskRepository {
 	return &taskRepository{tasklist: []todo.Task{}, used: make(map[int64]bool)}
 }
