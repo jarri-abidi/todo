@@ -49,11 +49,6 @@ func NewServer(service Service, logger log.Logger) http.Handler {
 	return s.router
 }
 
-type server struct {
-	router  *way.Router
-	service Service
-}
-
 const (
 	contentTypeKey   = "Content-Type"
 	contentTypeValue = "application/json; charset=utf-8"
@@ -68,6 +63,11 @@ var (
 type ErrInvalidRequestBody struct{ err error }
 
 func (e ErrInvalidRequestBody) Error() string { return fmt.Sprintf("invalid request body: %v", e.err) }
+
+type server struct {
+	router  *way.Router
+	service Service
+}
 
 func (s *server) handleSaveTask() http.HandlerFunc {
 	type request struct {
