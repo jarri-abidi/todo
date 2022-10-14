@@ -16,7 +16,7 @@ import (
 )
 
 func NewServer(service Service, logger log.Logger) http.Handler {
-	s := server{router: way.NewRouter(), service: service}
+	s := server{service: service}
 
 	var handleSaveTask http.Handler
 	handleSaveTask = s.handleSaveTask()
@@ -39,14 +39,16 @@ func NewServer(service Service, logger log.Logger) http.Handler {
 	handleToggleTask = httpLoggingMiddleware(logger, "handleToggleTask")(handleToggleTask)
 	handleToggleTask = otelhttp.NewHandler(handleToggleTask, "handleToggleTask")
 
-	s.router.Handle("POST", "/checklist/v1/tasks", handleSaveTask)
-	s.router.Handle("GET", "/checklist/v1/tasks", handleListTasks)
-	s.router.Handle("DELETE", "/checklist/v1/task/:id", handleRemoveTask)
-	s.router.Handle("PATCH", "/checklist/v1/task/:id", handleToggleTask)
+	router := way.NewRouter()
 
-	s.router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeError(w, ErrResourceNotFound) })
+	router.Handle("POST", "/checklist/v1/tasks", handleSaveTask)
+	router.Handle("GET", "/checklist/v1/tasks", handleListTasks)
+	router.Handle("DELETE", "/checklist/v1/task/:id", handleRemoveTask)
+	router.Handle("PATCH", "/checklist/v1/task/:id", handleToggleTask)
 
-	return s.router
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeError(w, ErrResourceNotFound) })
+
+	return router
 }
 
 const (
@@ -65,7 +67,6 @@ type ErrInvalidRequestBody struct{ err error }
 func (e ErrInvalidRequestBody) Error() string { return fmt.Sprintf("invalid request body: %v", e.err) }
 
 type server struct {
-	router  *way.Router
 	service Service
 }
 
