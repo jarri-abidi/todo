@@ -1,12 +1,13 @@
 # todo
-Example project meant to demonstrate a production-ready, enterprise-style REST API using go-kit. 
+[![MIT](https://img.shields.io/github/license/jarri-abidi/todo)](https://github.com/jarri-abidi/todo/blob/master/LICENSE)
 
-To run:
+**todo** is an example application written in [Go](https://go.dev/) meant to demonstrate a production-ready, enterprise-style REST API using [go-kit](https://gokit.io/). 
+
+## Usage
+### Run
 ```
 docker-compose build && docker-compose up -d
 ```
-
-To stop:
+### Stop
 ```
 docker-compose down
-```
