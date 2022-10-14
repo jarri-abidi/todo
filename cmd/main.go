@@ -116,7 +116,7 @@ func main() {
 	service = checklist.LoggingMiddleware(logger)(service)
 
 	mux := http.NewServeMux()
-	mux.Handle("/checklist/v1/", checklist.MakeHandler(service, logger))
+	mux.Handle("/checklist/v1/", checklist.NewServer(service, logger))
 	mux.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{
