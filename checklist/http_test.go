@@ -30,8 +30,8 @@ func TestToggleTask(t *testing.T) {
 			"1", http.StatusNoContent, ``, true,
 		},
 		{
-			"Returns 404 and error msg for non-numeric id",
-			"meow", http.StatusNotFound, `{"error":"resource not found"}`, false,
+			"Returns 400 and error msg for non-numeric id",
+			"meow", http.StatusBadRequest, `{"error":"task id in path must be numeric"}`, false,
 		},
 		{
 			"Returns 404 and error msg for id of task that doesn't exist",
@@ -45,7 +45,7 @@ func TestToggleTask(t *testing.T) {
 				require = require.New(t)
 				assert  = assert.New(t)
 				svc     = checklist.NewService(inmem.NewTaskRepository())
-				handler = checklist.MakeHandler(svc, log.NewNopLogger())
+				handler = checklist.NewServer(svc, log.NewNopLogger())
 			)
 
 			task := todo.Task{Name: "Gaari ki service karwalo"}
@@ -60,7 +60,7 @@ func TestToggleTask(t *testing.T) {
 
 			assert.Equal(tc.ExpectedCode, rec.Result().StatusCode, "unexpected http status code")
 			if tc.ExpectedCode != http.StatusNoContent {
-				assert.JSONEq(tc.ExpectedRspBody, rec.Body.String(), " unexpected http response body")
+				assert.JSONEq(tc.ExpectedRspBody, rec.Body.String(), "unexpected http response body")
 			}
 
 			list, err := svc.List(context.TODO())
@@ -111,7 +111,7 @@ func TestListTasks(t *testing.T) {
 				require = require.New(t)
 				assert  = assert.New(t)
 				svc     = checklist.NewService(inmem.NewTaskRepository())
-				handler = checklist.MakeHandler(svc, log.NewNopLogger())
+				handler = checklist.NewServer(svc, log.NewNopLogger())
 			)
 
 			for i := range tc.TasksInRepo {
@@ -130,7 +130,7 @@ func TestListTasks(t *testing.T) {
 	}
 }
 
-func NoTestReplaceTask(t *testing.T) {
+func TestReplaceTask(t *testing.T) {
 	tt := []struct {
 		Name            string
 		ReqBody         string
@@ -153,10 +153,10 @@ func NoTestReplaceTask(t *testing.T) {
 			`{"id":1337,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
-			"Returns 404 and error msg for non-numeric id",
+			"Returns 400 and error msg for non-numeric id",
 			`{"name": "Pawdo ko paani daal do", "done": true}`,
-			"meow", "Gaari ki service karwalo", false, http.StatusNotFound,
-			`{"error":"resource not found"}`,
+			"meow", "Gaari ki service karwalo", false, http.StatusBadRequest,
+			`{"error":"task id in path must be numeric"}`,
 		},
 		{
 			"Returns 400 and error msg for invalid json",
@@ -178,7 +178,7 @@ func NoTestReplaceTask(t *testing.T) {
 				require = require.New(t)
 				assert  = assert.New(t)
 				svc     = checklist.NewService(inmem.NewTaskRepository())
-				handler = checklist.MakeHandler(svc, log.NewNopLogger())
+				handler = checklist.NewServer(svc, log.NewNopLogger())
 			)
 
 			savedTask := todo.Task{Name: "Gaari ki service karwalo"}

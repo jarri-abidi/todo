@@ -84,7 +84,7 @@ func TestRemove(t *testing.T) {
 	assert.Empty(list, "expected list to be empty after removing task")
 }
 
-func NoTestUpdate(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	var (
 		require = require.New(t)
 		assert  = assert.New(t)
