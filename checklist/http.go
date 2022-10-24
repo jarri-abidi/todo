@@ -39,12 +39,18 @@ func NewServer(service Service, logger log.Logger) http.Handler {
 	handleToggleTask = httpLoggingMiddleware(logger, "handleToggleTask")(handleToggleTask)
 	handleToggleTask = otelhttp.NewHandler(handleToggleTask, "handleToggleTask")
 
+	var handleUpdateTask http.Handler
+	handleUpdateTask = s.handleUpdateTask()
+	handleUpdateTask = httpLoggingMiddleware(logger, "handleUpdateTask")(handleUpdateTask)
+	handleUpdateTask = otelhttp.NewHandler(handleUpdateTask, "handleUpdateTask")
+
 	router := way.NewRouter()
 
 	router.Handle("POST", "/checklist/v1/tasks", handleSaveTask)
 	router.Handle("GET", "/checklist/v1/tasks", handleListTasks)
 	router.Handle("DELETE", "/checklist/v1/task/:id", handleRemoveTask)
 	router.Handle("PATCH", "/checklist/v1/task/:id", handleToggleTask)
+	router.Handle("PUT", "/checklist/v1/task/:id", handleUpdateTask)
 
 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeError(w, ErrResourceNotFound) })
 
@@ -86,8 +92,8 @@ func (s *server) handleSaveTask() http.HandlerFunc {
 			return
 		}
 
-		task := todo.Task{Name: req.Name}
-		if err := s.service.Save(r.Context(), &task); err != nil {
+		task, err := s.service.Save(r.Context(), todo.Task{Name: req.Name})
+		if err != nil {
 			writeError(w, err)
 			return
 		}
@@ -146,6 +152,44 @@ func (s *server) handleToggleTask() http.HandlerFunc {
 			writeError(w, err)
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s *server) handleUpdateTask() http.HandlerFunc {
+	type request struct {
+		Name string `json:"name"`
+		Done bool   `json:"done"`
+	}
+	type response struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+		Done bool   `json:"done"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(way.Param(r.Context(), "id"), 10, 64)
+		if err != nil {
+			writeError(w, ErrNonNumericTaskID)
+			return
+		}
+
+		var req request
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, ErrInvalidRequestBody{err})
+			return
+		}
+
+		task, isCreated, err := s.service.Update(r.Context(), todo.Task{ID: id, Name: req.Name, Done: req.Done})
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		if isCreated {
+			w.WriteHeader(http.StatusCreated)
+		}
+
+		w.Header().Set(contentTypeKey, contentTypeValue)
+		json.NewEncoder(w).Encode(response{ID: task.ID, Name: task.Name, Done: task.Done})
 	}
 }
 

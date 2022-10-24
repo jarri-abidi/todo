@@ -9,11 +9,11 @@ import (
 
 // Service is an application service that lets us interact with a list of tasks.
 type Service interface {
-	Save(context.Context, *todo.Task) error
+	Save(context.Context, todo.Task) (*todo.Task, error)
 	List(context.Context) ([]todo.Task, error)
 	ToggleDone(ctx context.Context, id int64) error
 	Remove(ctx context.Context, id int64) error
-	Update(context.Context, *todo.Task) error
+	Update(context.Context, todo.Task) (task *todo.Task, isCreated bool, err error)
 }
 
 // Middleware describes a Service middleware.
@@ -27,11 +27,11 @@ func NewService(repository todo.TaskRepository) Service {
 	return &service{repository: repository}
 }
 
-func (s *service) Save(ctx context.Context, task *todo.Task) error {
-	if err := s.repository.Insert(ctx, task); err != nil {
-		return fmt.Errorf("could not save task: %v", err)
+func (s *service) Save(ctx context.Context, task todo.Task) (*todo.Task, error) {
+	if err := s.repository.Insert(ctx, &task); err != nil {
+		return nil, fmt.Errorf("could not save task: %v", err)
 	}
-	return nil
+	return &task, nil
 }
 
 func (s *service) List(ctx context.Context) ([]todo.Task, error) {
@@ -70,6 +70,17 @@ func (s *service) Remove(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *service) Update(ctx context.Context, task *todo.Task) error {
-	return nil
+func (s *service) Update(ctx context.Context, task todo.Task) (*todo.Task, bool, error) {
+	err := s.repository.Update(ctx, &task)
+	if err == todo.ErrTaskNotFound {
+		err = s.repository.Insert(ctx, &task)
+		if err != nil {
+			return nil, false, fmt.Errorf("could not create task: %v", err)
+		}
+		return &task, true, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("could not update task: %v", err)
+	}
+	return &task, false, nil
 }

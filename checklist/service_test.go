@@ -19,8 +19,13 @@ func TestSave(t *testing.T) {
 	)
 
 	task := todo.Task{Name: "Kachra phenk k ao", Done: false}
+	savedTask, err := svc.Save(context.TODO(), task)
+	assert.NoError(err, "could not save task")
 
-	assert.NoError(svc.Save(context.TODO(), &task), "could not save task")
+	assert.NotZero(savedTask.ID)
+	assert.Positive(savedTask.ID)
+	assert.Equal(task.Name, savedTask.Name)
+	assert.False(savedTask.Done)
 }
 
 func TestList(t *testing.T) {
@@ -37,14 +42,15 @@ func TestList(t *testing.T) {
 	}
 
 	for i := range expected {
-		require.NoError(svc.Save(context.TODO(), &expected[i]), "could not save task")
+		_, err := svc.Save(context.TODO(), expected[i])
+		require.NoError(err, "could not save task")
 	}
 
 	list, err := svc.List(context.TODO())
 	require.NoError(err, "could not list tasks")
 
 	for i := range list {
-		assert.Equal(expected[i].ID, list[i].ID, "IDs need to match")
+		assert.Positive(list[i].ID)
 		assert.Equal(expected[i].Name, list[i].Name, "Names need to match")
 		assert.Equal(expected[i].Done, list[i].Done, "Done needs to match")
 	}
@@ -57,8 +63,8 @@ func TestToggleDone(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	task := todo.Task{Name: "Kachra phenk k ao", Done: false}
-	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
+	task, err := svc.Save(context.TODO(), todo.Task{Name: "Kachra phenk k ao", Done: false})
+	require.NoError(err, "could not save task")
 
 	require.NoError(svc.ToggleDone(context.TODO(), task.ID), "could not toggle task")
 
@@ -74,8 +80,8 @@ func TestRemove(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	task := todo.Task{Name: "Kachra phenk k ao", Done: true}
-	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
+	task, err := svc.Save(context.TODO(), todo.Task{Name: "Kachra phenk k ao", Done: true})
+	require.NoError(err, "could not save task")
 
 	require.NoError(svc.Remove(context.TODO(), task.ID), "could not remove task")
 
@@ -91,12 +97,14 @@ func TestUpdate(t *testing.T) {
 		svc     = checklist.NewService(inmem.NewTaskRepository())
 	)
 
-	task := todo.Task{Name: "Internet ki complaint karo"}
-	require.NoError(svc.Save(context.TODO(), &task), "could not save task")
+	task, err := svc.Save(context.TODO(), todo.Task{Name: "Internet ki complaint karo"})
+	require.NoError(err, "could not save task")
 
 	task.Name = "Bijli* ki complaint karo"
 	task.Done = true
-	require.NoError(svc.Update(context.TODO(), &task), "could not update task")
+	task, isCreated, err := svc.Update(context.TODO(), *task)
+	assert.False(isCreated)
+	require.NoError(err, "could not update task")
 
 	list, err := svc.List(context.TODO())
 	assert.NoError(err, "could not list tasks")

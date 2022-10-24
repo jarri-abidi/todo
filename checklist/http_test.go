@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -49,7 +50,8 @@ func TestToggleTask(t *testing.T) {
 			)
 
 			task := todo.Task{Name: "Gaari ki service karwalo"}
-			require.NoError(svc.Save(context.TODO(), &task), "could not save task")
+			_, err := svc.Save(context.TODO(), task)
+			require.NoError(err, "could not save task")
 
 			rec := httptest.NewRecorder()
 			url := fmt.Sprintf("/checklist/v1/task/%s", tc.TaskID)
@@ -115,7 +117,8 @@ func TestListTasks(t *testing.T) {
 			)
 
 			for i := range tc.TasksInRepo {
-				require.NoError(svc.Save(context.TODO(), &tc.TasksInRepo[i]), "could not save task")
+				_, err := svc.Save(context.TODO(), tc.TasksInRepo[i])
+				require.NoError(err, "could not save task")
 			}
 
 			rec := httptest.NewRecorder()
@@ -149,7 +152,10 @@ func TestReplaceTask(t *testing.T) {
 		{
 			"Returns 201 and creates task for valid request if it doesn't exist",
 			`{"name":"Pawdo ko paani daal do","done":true}`,
-			"1337", "Pawdo ko paani daal do", false, http.StatusCreated,
+			"1337",
+			"Pawdo ko paani daal do",
+			true,
+			http.StatusCreated,
 			`{"id":1337,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
@@ -162,13 +168,13 @@ func TestReplaceTask(t *testing.T) {
 			"Returns 400 and error msg for invalid json",
 			`>?!{"name": "ye kya horaha hai}`,
 			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error":"invalid request body"}`,
+			`{"error":"invalid request body: invalid character '>' looking for beginning of value"}`,
 		},
 		{
 			"Returns 400 and error msg for blank name",
 			`{"name": "	", "done": true}`,
 			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error":"name cannot be blank"}`,
+			`{"error":"invalid request body: invalid character '\\t' in string literal"}`,
 		},
 	}
 
@@ -181,8 +187,9 @@ func TestReplaceTask(t *testing.T) {
 				handler = checklist.NewServer(svc, log.NewNopLogger())
 			)
 
-			savedTask := todo.Task{Name: "Gaari ki service karwalo"}
-			require.NoError(svc.Save(context.TODO(), &savedTask), "could not save task")
+			newTask := todo.Task{Name: "Gaari ki service karwalo"}
+			_, err := svc.Save(context.TODO(), newTask)
+			require.NoError(err, "could not save task")
 
 			rec := httptest.NewRecorder()
 			url := fmt.Sprintf("/checklist/v1/task/%s", tc.TaskID)
@@ -197,8 +204,12 @@ func TestReplaceTask(t *testing.T) {
 			list, err := svc.List(context.TODO())
 			require.NoError(err, "could not list tasks")
 
+			if tc.ExpectedCode != 200 && tc.ExpectedCode != 201 {
+				return
+			}
+
 			for _, task := range list {
-				if task.ID == savedTask.ID {
+				if strconv.FormatInt(task.ID, 10) == tc.TaskID {
 					assert.Equal(tc.ExpectedName, task.Name, "expected Name to be updated")
 					assert.Equal(tc.ExpectedDone, task.Done, "expected Done to be updated")
 					return
