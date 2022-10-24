@@ -66,7 +66,7 @@ func (s *loggingMiddleware) ToggleDone(ctx context.Context, id int64) (err error
 	return s.Service.ToggleDone(ctx, id)
 }
 
-func (s *loggingMiddleware) Update(ctx context.Context, task todo.Task) (_ *todo.Task, err error) {
+func (s *loggingMiddleware) Update(ctx context.Context, task todo.Task) (_ *todo.Task, _ bool, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "update",

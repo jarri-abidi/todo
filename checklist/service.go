@@ -70,16 +70,16 @@ func (s *service) Remove(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *service) Update(ctx context.Context, task todo.Task) (*todo.Task, error) {
+func (s *service) Update(ctx context.Context, task todo.Task) (*todo.Task, bool, error) {
 	err := s.repository.Update(ctx, &task)
 	if err == todo.ErrTaskNotFound {
 		err = s.repository.Insert(ctx, &task)
 		if err != nil {
-			return nil, fmt.Errorf("could not create task: %v", err)
+			return nil, true, fmt.Errorf("could not create task: %v", err)
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("could not update task: %v", err)
+		return nil, true, fmt.Errorf("could not update task: %v", err)
 	}
-	return &task, nil
+	return &task, true, nil
 }
