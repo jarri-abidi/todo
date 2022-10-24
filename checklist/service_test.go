@@ -102,7 +102,8 @@ func TestUpdate(t *testing.T) {
 
 	task.Name = "Bijli* ki complaint karo"
 	task.Done = true
-	task, err = svc.Update(context.TODO(), *task)
+	task, isCreated, err := svc.Update(context.TODO(), *task)
+	assert.False(isCreated)
 	require.NoError(err, "could not update task")
 
 	list, err := svc.List(context.TODO())

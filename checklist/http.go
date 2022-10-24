@@ -178,11 +178,16 @@ func (s *server) handleUpdateTask() http.HandlerFunc {
 			return
 		}
 
-		task, err := s.service.Update(r.Context(), todo.Task{ID: id, Name: req.Name, Done: req.Done})
+		task, isCreated, err := s.service.Update(r.Context(), todo.Task{ID: id, Name: req.Name, Done: req.Done})
 		if err != nil {
 			writeError(w, err)
 			return
 		}
+
+		if isCreated {
+			w.WriteHeader(http.StatusCreated)
+		}
+
 		w.Header().Set(contentTypeKey, contentTypeValue)
 		json.NewEncoder(w).Encode(response{ID: task.ID, Name: task.Name, Done: task.Done})
 	}

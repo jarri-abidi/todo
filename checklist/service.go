@@ -13,7 +13,7 @@ type Service interface {
 	List(context.Context) ([]todo.Task, error)
 	ToggleDone(ctx context.Context, id int64) error
 	Remove(ctx context.Context, id int64) error
-	Update(context.Context, todo.Task) (*todo.Task, error)
+	Update(context.Context, todo.Task) (task *todo.Task, isCreated bool, err error)
 }
 
 // Middleware describes a Service middleware.
@@ -75,11 +75,12 @@ func (s *service) Update(ctx context.Context, task todo.Task) (*todo.Task, bool,
 	if err == todo.ErrTaskNotFound {
 		err = s.repository.Insert(ctx, &task)
 		if err != nil {
-			return nil, true, fmt.Errorf("could not create task: %v", err)
+			return nil, false, fmt.Errorf("could not create task: %v", err)
 		}
+		return &task, true, nil
 	}
 	if err != nil {
-		return nil, true, fmt.Errorf("could not update task: %v", err)
+		return nil, false, fmt.Errorf("could not update task: %v", err)
 	}
-	return &task, true, nil
+	return &task, false, nil
 }
