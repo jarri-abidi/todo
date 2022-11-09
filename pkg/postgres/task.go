@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jarri-abidi/todo"
-	"github.com/jarri-abidi/todo/postgres/gen"
+	"github.com/jarri-abidi/todo/pkg/postgres/gen"
+	"github.com/jarri-abidi/todo/pkg/todo"
 )
 
 type taskRepository struct {

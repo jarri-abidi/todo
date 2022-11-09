@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jarri-abidi/todo"
-	"github.com/jarri-abidi/todo/checklist"
-	"github.com/jarri-abidi/todo/inmem"
+	"github.com/jarri-abidi/todo/pkg/checklist"
+	"github.com/jarri-abidi/todo/pkg/inmem"
+	"github.com/jarri-abidi/todo/pkg/todo"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

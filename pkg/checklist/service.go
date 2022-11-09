@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jarri-abidi/todo"
+	"github.com/jarri-abidi/todo/pkg/todo"
 )
 
 // Service is an application service that lets us interact with a list of tasks.

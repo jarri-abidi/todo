@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/log"
 
-	"github.com/jarri-abidi/todo"
+	"github.com/jarri-abidi/todo/pkg/todo"
 )
 
 // LoggingMiddleware takes a logger as a dependency and returns a service Middleware.

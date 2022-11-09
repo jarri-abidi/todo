@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
-	"github.com/jarri-abidi/todo"
+	"github.com/jarri-abidi/todo/pkg/todo"
 )
 
 func NewServer(service Service, logger log.Logger) http.Handler {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jarri-abidi/todo"
+	"github.com/jarri-abidi/todo/pkg/todo"
 )
 
 type taskRepository struct {

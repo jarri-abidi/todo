@@ -23,9 +23,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
-	"github.com/jarri-abidi/todo/checklist"
-	"github.com/jarri-abidi/todo/inmem"
-	"github.com/jarri-abidi/todo/postgres"
+	"github.com/jarri-abidi/todo/pkg/checklist"
+	"github.com/jarri-abidi/todo/pkg/inmem"
+	"github.com/jarri-abidi/todo/pkg/postgres"
 )
 
 func main() {
