@@ -59,10 +59,11 @@ func (s *service) ToggleDone(ctx context.Context, id int64) error {
 }
 
 func (s *service) Remove(ctx context.Context, id int64) error {
-	if err := s.repository.DeleteByID(ctx, id); err != nil {
-		if err == todo.ErrTaskNotFound {
-			return err
-		}
+	err := s.repository.DeleteByID(ctx, id)
+	if err == todo.ErrTaskNotFound {
+		return err
+	}
+	if err != nil {
 		return fmt.Errorf("could not delete task: %v", err)
 	}
 	return nil
