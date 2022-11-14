@@ -52,8 +52,7 @@ func (s *service) ToggleDone(ctx context.Context, id int64) error {
 	}
 
 	task.Done = !task.Done
-	err = s.repository.Update(ctx, task)
-	if err != nil {
+	if err = s.repository.Update(ctx, task); err != nil {
 		return fmt.Errorf("could not toggle task: %v", err)
 	}
 	return nil
