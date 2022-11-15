@@ -135,6 +135,7 @@ func (s *server) handleRemoveTask() http.HandlerFunc {
 
 		if err := s.service.Remove(r.Context(), id); err != nil {
 			writeError(w, err)
+			return
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}
