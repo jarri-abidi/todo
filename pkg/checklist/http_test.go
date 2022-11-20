@@ -27,16 +27,25 @@ func TestToggleTask(t *testing.T) {
 		ExpectedDone    bool
 	}{
 		{
-			"Returns 204 and toggles for valid request",
-			"1", http.StatusNoContent, ``, true,
+			Name:            "Returns 204 and toggles for valid request",
+			TaskID:          "1",
+			ExpectedCode:    http.StatusNoContent,
+			ExpectedRspBody: ``,
+			ExpectedDone:    true,
 		},
 		{
-			"Returns 400 and error msg for non-numeric id",
-			"meow", http.StatusBadRequest, `{"error":"task id in path must be numeric"}`, false,
+			Name:            "Returns 400 and error msg for non-numeric id",
+			TaskID:          "meow",
+			ExpectedCode:    http.StatusBadRequest,
+			ExpectedRspBody: `{"error":"task id in path must be numeric"}`,
+			ExpectedDone:    false,
 		},
 		{
-			"Returns 404 and error msg for id of task that doesn't exist",
-			"1337", http.StatusNotFound, `{"error":"task not found"}`, false,
+			Name:            "Returns 404 and error msg for id of task that doesn't exist",
+			TaskID:          "1337",
+			ExpectedCode:    http.StatusNotFound,
+			ExpectedRspBody: `{"error":"task not found"}`,
+			ExpectedDone:    false,
 		},
 	}
 
@@ -79,29 +88,29 @@ func TestListTasks(t *testing.T) {
 		Expected    string
 	}{
 		{
-			"Returns 200 and empty list if no tasks exist",
-			[]todo.Task{},
-			`[]`,
+			Name:        "Returns 200 and empty list if no tasks exist",
+			TasksInRepo: []todo.Task{},
+			Expected:    `[]`,
 		},
 		{
-			"Returns 200 and 3 tasks if 3 tasks exist",
-			[]todo.Task{
+			Name: "Returns 200 and 3 tasks if 3 tasks exist",
+			TasksInRepo: []todo.Task{
 				{ID: 1, Name: "Kachra phenk k ao", Done: false},
 				{ID: 2, Name: "Gaari ki service karalo", Done: false},
 				{ID: 3, Name: "Roti le ao", Done: false},
 			},
-			`[
+			Expected: `[
 				{"id": 1, "name": "Kachra phenk k ao", "done": false},
 				{"id": 2, "name": "Gaari ki service karalo", "done": false},
 				{"id": 3, "name": "Roti le ao", "done": false}
 			]`,
 		},
 		{
-			"Returns 200 and 1 task if 1 task exists",
-			[]todo.Task{
+			Name: "Returns 200 and 1 task if 1 task exists",
+			TasksInRepo: []todo.Task{
 				{ID: 1, Name: "Kachra phenk k ao", Done: false},
 			},
-			`[
+			Expected: `[
 				{"id": 1, "name": "Kachra phenk k ao", "done": false}
 			]`,
 		},
@@ -144,37 +153,49 @@ func TestReplaceTask(t *testing.T) {
 		ExpectedRspBody string
 	}{
 		{
-			"Returns 200 and updates task for valid request",
-			`{"name":"Pawdo ko paani daal do","done":true}`,
-			"1", "Pawdo ko paani daal do", true, http.StatusOK,
-			`{"id": 1,"name":"Pawdo ko paani daal do","done":true}`,
+			Name:            "Returns 200 and updates task for valid request",
+			ReqBody:         `{"name":"Pawdo ko paani daal do","done":true}`,
+			TaskID:          "1",
+			ExpectedName:    "Pawdo ko paani daal do",
+			ExpectedDone:    true,
+			ExpectedCode:    http.StatusOK,
+			ExpectedRspBody: `{"id": 1,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
-			"Returns 201 and creates task for valid request if it doesn't exist",
-			`{"name":"Pawdo ko paani daal do","done":true}`,
-			"1337",
-			"Pawdo ko paani daal do",
-			true,
-			http.StatusCreated,
-			`{"id":1337,"name":"Pawdo ko paani daal do","done":true}`,
+			Name:            "Returns 201 and creates task for valid request if it doesn't exist",
+			ReqBody:         `{"name":"Pawdo ko paani daal do","done":true}`,
+			TaskID:          "1337",
+			ExpectedName:    "Pawdo ko paani daal do",
+			ExpectedDone:    true,
+			ExpectedCode:    http.StatusCreated,
+			ExpectedRspBody: `{"id":1337,"name":"Pawdo ko paani daal do","done":true}`,
 		},
 		{
-			"Returns 400 and error msg for non-numeric id",
-			`{"name": "Pawdo ko paani daal do", "done": true}`,
-			"meow", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error":"task id in path must be numeric"}`,
+			Name:            "Returns 400 and error msg for non-numeric id",
+			ReqBody:         `{"name": "Pawdo ko paani daal do", "done": true}`,
+			TaskID:          "meow",
+			ExpectedName:    "Gaari ki service karwalo",
+			ExpectedDone:    false,
+			ExpectedCode:    http.StatusBadRequest,
+			ExpectedRspBody: `{"error":"task id in path must be numeric"}`,
 		},
 		{
-			"Returns 400 and error msg for invalid json",
-			`>?!{"name": "ye kya horaha hai}`,
-			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error":"invalid request body: invalid character '>' looking for beginning of value"}`,
+			Name:            "Returns 400 and error msg for invalid json",
+			ReqBody:         `>?!{"name": "ye kya horaha hai}`,
+			TaskID:          "1",
+			ExpectedName:    "Gaari ki service karwalo",
+			ExpectedDone:    false,
+			ExpectedCode:    http.StatusBadRequest,
+			ExpectedRspBody: `{"error":"invalid request body: invalid character '>' looking for beginning of value"}`,
 		},
 		{
-			"Returns 400 and error msg for blank name",
-			`{"name": "	", "done": true}`,
-			"1", "Gaari ki service karwalo", false, http.StatusBadRequest,
-			`{"error":"invalid request body: invalid character '\\t' in string literal"}`,
+			Name:            "Returns 400 and error msg for blank name",
+			ReqBody:         `{"name": "	", "done": true}`,
+			TaskID:          "1",
+			ExpectedName:    "Gaari ki service karwalo",
+			ExpectedDone:    false,
+			ExpectedCode:    http.StatusBadRequest,
+			ExpectedRspBody: `{"error":"invalid request body: invalid character '\\t' in string literal"}`,
 		},
 	}
 
