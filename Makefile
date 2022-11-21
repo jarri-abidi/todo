@@ -5,7 +5,7 @@ default: build
 gen:
 	sqlc generate
 
-build: gen
+build: gen test
 	go build -o app cmd/main.go
 
 test:
