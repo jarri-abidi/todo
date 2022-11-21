@@ -1,10 +1,10 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "postgres/queries/"
-    schema: "postgres/migrations/"
+    queries: "pkg/postgres/queries/"
+    schema: "pkg/postgres/migrations/"
     gen:
       go:
         package: "gen"
-        out: "postgres/gen"
+        out: "pkg/postgres/gen"
         emit_empty_slices: true
