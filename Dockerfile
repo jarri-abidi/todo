@@ -15,7 +15,7 @@ COPY docker.env .
 COPY start.sh .
 COPY wait-for.sh .
 RUN chmod +x start.sh wait-for.sh
-COPY postgres/migrations ./postgres/migrations
+COPY pkg/postgres/migrations ./postgres/migrations
 
 EXPOSE 8085
 CMD [ "/app/main" ]
