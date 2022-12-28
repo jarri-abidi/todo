@@ -17,8 +17,50 @@ spec:
       containers:
       - name: todo
         image: markhaur/todo:latest
+        env:
+        - name: TODOAPP_CONFIG_PATH 
+          value: "docker.env"
         ports:
         - containerPort: 8085
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: todo
+        image: postgres:14-alpine 
+        env:
+        - name: POSTGRES_USER 
+          value: "root" 
+        - name: POSTGRES_PASSWORD 
+          value: "secret"
+        - name: POSTGRES_DB
+          value: "todo"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-volume
+      volumes:
+    - name: postgres-volume
+      hostPath:
+        path: ./postgres
+        type: Directory
+
 
 ---
 apiVersion: v1
