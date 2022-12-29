@@ -40,7 +40,7 @@ func main() {
 	}
 
 	var config struct {
-		ServerAddress              string        `envconfig:"SERVER_ADDRESS" default:"localhost:8085"`
+		ServerAddress              string        `envconfig:"SERVER_ADDRESS" default:"0.0.0.0:8085"`
 		ServerWriteTimeout         time.Duration `envconfig:"SERVER_WRITE_TIMEOUT" default:"15s"`
 		ServerReadTimeout          time.Duration `envconfig:"SERVER_READ_TIMEOUT" default:"15s"`
 		ServerIdleTimeout          time.Duration `envconfig:"SERVER_IDLE_TIMEOUT" default:"60s"`

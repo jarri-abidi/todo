@@ -6,10 +6,14 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=todo
+    networks:
+      - todonetwork
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
       - "16687:16686"
+    networks:
+      - todonetwork
   todo:
     build:
       context: .
@@ -20,6 +24,8 @@ services:
       - TODOAPP_CONFIG_PATH=docker.env
     depends_on:
       - postgres
+    networks:
+      - todonetwork
     entrypoint:
       [
         "/app/wait-for.sh",
@@ -28,3 +34,8 @@ services:
         "/app/start.sh"
       ]
     command: [ "/app/main" ]
+
+networks:
+  todonetwork:
+    name: todo_network
+      #    driver: default 
